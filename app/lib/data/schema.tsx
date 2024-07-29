@@ -29,19 +29,54 @@ class DynamicModel {
         var keyValuePairs = this.getKeyValuePairs();
 
         var queryPartOne = `INSERT INTO ${this.schemaName} (`;
-        var queryPartTwo = `) values ( `;
+        var queryPartTwo = `) VALUES ( `;
         var queryPartThree = `)`;
 
         for (var i = 0; i < keyValuePairs.length; i++) {
             queryPartOne += keyValuePairs[i].key;
-            queryPartTwo += keyValuePairs[i].value;
+            queryPartTwo += `"${keyValuePairs[i].value}"`;
 
             if (i != keyValuePairs.length + 1) {
-                queryPartOne += `,`;
-                queryPartTwo += `,`;
+                queryPartOne += `, `;
+                queryPartTwo += `, `;
             }
         }
         var query = queryPartOne + queryPartTwo + queryPartThree;
+
+        return connection.executeSqlWihtout(query);
+    }
+
+    update() {
+        var keyValuePairs = this.getKeyValuePairs();
+
+        var queryPartOne = `UPDATE ${this.schemaName} SET `;
+        var queryPartTwo = `WHERE `;
+        for (var i = 0; i < keyValuePairs.length; i++) {
+            if (keyValuePairs[i].key == "ID") {
+                queryPartTwo += `ID ==  ${keyValuePairs[i].value}`;
+                continue;
+            } else {
+                queryPartOne += `${keyValuePairs[i].key} = "${keyValuePairs[i].value}"`;
+            }
+
+            if (i != keyValuePairs.length + 1) {
+                queryPartOne += `, `;
+            }
+        }
+        var query = queryPartOne;
+
+        return connection.executeSqlWihtout(query);
+    }
+
+    delete() {
+        var keyValuePairs = this.getKeyValuePairs();
+        var query = `DELETE FROM ${this.schemaName} WHERE `;
+        for (var i = 0; i < keyValuePairs.length; i++) {
+            if (keyValuePairs[i].key == "ID") {
+                query += `ID ==  ${keyValuePairs[i].value}`;
+                break;
+            }
+        }
 
         return connection.executeSqlWihtout(query);
     }
