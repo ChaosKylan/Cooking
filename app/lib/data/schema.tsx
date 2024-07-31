@@ -2,23 +2,26 @@ import SQliter from "./sql";
 interface Model {
     [key: string]: any;
 }
-const connection = new SQliter();
 
 class DynamicModel {
     [key: string]: any;
     private schemaName: string;
+    private connection: SQliter;
+    private model: any;
     constructor(_data: Model, _schemaName: string) {
         Object.assign(this, _data);
         this.schemaName = _schemaName;
+        this.connection = SQliter.connection();
+        this.model = _data;
     }
 
     private getKeyValuePairs() {
         var keyValuePairs = [];
 
-        for (var item in this) {
+        for (var i = 0; i < this.model.length; i++) {
             var keyValue: { key: any; value: any } = {
-                key: Object.keys(item[0]),
-                value: item,
+                key: this.model[i],
+                value: this[this.model[i]],
             };
             keyValuePairs.push(keyValue);
         }
@@ -33,17 +36,19 @@ class DynamicModel {
         var queryPartThree = `)`;
 
         for (var i = 0; i < keyValuePairs.length; i++) {
-            queryPartOne += keyValuePairs[i].key;
+            queryPartOne += `${keyValuePairs[i].key}`;
             queryPartTwo += `"${keyValuePairs[i].value}"`;
-
-            if (i != keyValuePairs.length + 1) {
+            if (i + 1 != keyValuePairs.length) {
                 queryPartOne += `, `;
                 queryPartTwo += `, `;
             }
         }
+
         var query = queryPartOne + queryPartTwo + queryPartThree;
 
-        return connection.executeSqlWihtout(query);
+        console.log("INSERT: " + query);
+
+        return this.connection.executeSqlWihtout(query);
     }
 
     update() {
@@ -65,7 +70,7 @@ class DynamicModel {
         }
         var query = queryPartOne;
 
-        return connection.executeSqlWihtout(query);
+        return this.connection.executeSqlWihtout(query);
     }
 
     delete() {
@@ -78,18 +83,31 @@ class DynamicModel {
             }
         }
 
-        return connection.executeSqlWihtout(query);
+        return this.connection.executeSqlWihtout(query);
     }
 }
 
 class Schema {
     schema;
+    connection: SQliter;
     constructor(_schema: any) {
         this.schema = _schema;
-        connection.createTable(this.schema);
+        this.connection = SQliter.connection();
+        var result = this.connection.createTable(this.schema);
     }
     getModel() {
-        return new DynamicModel(this.schema, Object.keys(this.schema)[0]);
+        var cleanedSchema = [];
+        const objKey = Object.keys(this.schema)[0];
+        for (var keys in this.schema[objKey]) {
+            cleanedSchema.push(keys);
+        }
+        var test = new DynamicModel(cleanedSchema, Object.keys(this.schema)[0]);
+        return test;
+    }
+    testGetAll() {
+        this.connection.executeSqlWithReturn(
+            "Select * from " + Object.keys(this.schema)[0]
+        );
     }
 }
 

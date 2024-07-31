@@ -5,10 +5,21 @@ class SQliter {
     /*
         Open Database Connection
     */
-    db: any;
 
-    async connection(_dbName = "cooking.db") {
-        this.db = await SQLite.openDatabaseAsync(_dbName);
+    static #instance: SQliter;
+    db: SQLite.SQLiteDatabase;
+
+    public static connection(_dbName = "cooking.db"): SQliter {
+        if (!SQliter.#instance) {
+            SQliter.#instance = new SQliter();
+        }
+
+        return SQliter.#instance;
+    }
+
+    constructor(_dbName = "cooking.db") {
+        //   this.db = SQLite.openDatabaseAsync(_dbName);
+        this.db = SQLite.openDatabaseSync(_dbName);
     }
     /*
         Create SqLite Table from Schema
@@ -32,28 +43,29 @@ class SQliter {
         }
         pks = pks.substring(0, pks.length - 1);
         query += pks + "))";
-        //  console.log(query);
 
         this.executeSqlWihtout(query);
-        // this.executeSql("Insert INTO books(ISBN, title) values(123,'test')");
-        // this.querySql("Select * From books");
     }
     // Funktion zum Ausführen von SQL-Abfragen, die keine Ergebnisse zurückgeben
-    async executeSqlWihtout(sql: String) {
-        const result = await this.db.runAsync(sql);
+    async executeSqlWihtout(sql: string, params = []) {
+        const result = this.db.runAsync(sql);
+        console.log(result);
         return result;
     }
 
     // Funktion zum Ausführen von SQL-Abfragen, die Ergebnisse zurückgeben
-    async executeSqlWithReturn(sql: String) {
+    async executeSqlWithReturn(sql: string) {
+        console.log(sql);
+        // const rows = await this.db.getAllSync(sql);
         const rows = await this.db.getAllAsync(sql);
+        // console.log("SELECT: " + rows[0].value);
         return rows; // (row = id, value, initValue)
     }
 
     // Funktion zum Schließen der Datenbankverbindung
     closeDatabase() {
         if (this.db) {
-            this.db._db.close();
+            this.db.closeAsync();
         }
     }
 }
