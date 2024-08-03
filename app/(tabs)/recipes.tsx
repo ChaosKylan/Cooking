@@ -8,12 +8,16 @@ export default function Tab() {
     recipeModel.recipeIngredient = "Test";
     recipeModel.recipeInstructions = "Test2";
 
-    // recipeModel.insert();
+    recipeModel.insert();
+    recipeModel.recipeInstructions = "Test5";
+    recipeModel.update();
+    //recipeModel.delete();
 
     var test = new SQliter();
-    var testmodel = test.findOne("Recipes", recipeSchema);
+    var testmodel: any = test.findOne("Recipes", recipeSchema);
+    testmodel = test.findOne("Recipes", recipeSchema);
 
-    console.log("testmodel: " + testmodel.recipeInstructions);
+    console.log("testmodel 2: " + testmodel.recipeInstructions);
 
     // var test = recipeSchema.testGetAll();
 

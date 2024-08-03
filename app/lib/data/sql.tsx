@@ -25,6 +25,7 @@ class SQliter {
         Create SqLite Table from Schema
     */
     createTable(_schema: any, name: string) {
+        //this.executeSqlWihtout("DROP TABLE " + name);
         let pks = " PRIMARY KEY (";
         const objKey = Object.keys(_schema)[0];
         let query = `CREATE TABLE IF NOT EXISTS ${name} (`;
@@ -62,7 +63,7 @@ class SQliter {
     // Funktion zum Ausführen von SQL-Abfragen, die keine Ergebnisse zurückgeben
     async executeSqlWihtout(sql: string, params = []) {
         try {
-            const result = this.db.runAsync(sql);
+            const result = await this.db.runSync(sql);
             return result;
         } catch (e) {
             console.log(e);
@@ -158,6 +159,27 @@ class SQliter {
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );
+            }
+            update() {
+                var queryPartOne = `UPDATE ${this.name} SET `;
+                var queryPartTwo = `WHERE `;
+                Object.keys(this.schema).forEach((key) => {
+                    if (key == "ID") {
+                        queryPartTwo += `ID == ${this[key]}`;
+                    }
+                    queryPartOne += `"${key}" = "${this[key]}" ,`;
+                });
+                queryPartOne = queryPartOne.slice(0, -1);
+                this.sqliter.executeSqlWihtout(queryPartOne + queryPartTwo);
+            }
+            delete() {
+                var query = `DELETE FROM ${this.name} WHERE `;
+                Object.keys(this.schema).forEach((key) => {
+                    if (key == "ID") {
+                        query += `ID == ${this[key]}`;
+                    }
+                });
+                this.sqliter.executeSqlWihtout(query);
             }
         }
         return new DynamicModel(data);
