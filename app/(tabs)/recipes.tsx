@@ -1,30 +1,77 @@
-import { View, Text, StyleSheet } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TextInput,
+    Touchable,
+    Button,
+    Pressable,
+    Dimensions,
+} from "react-native";
+import { Entypo } from "@expo/vector-icons";
 import { recipeSchema } from "../model/recipeModel";
 import SQliter from "../lib/data/sql";
+import { cleanUpStringForDB, cleanUpStringForView } from "../lib/cleanUpString";
+import { useState } from "react";
 
 export default function Tab() {
+    var db = new SQliter();
+    var [recipeModelList, setRecipeModelList]: any = useState(
+        db.findAll("Recipes", recipeSchema)
+    );
+
     var recipeModel = SQliter.Model("Recipes", recipeSchema);
-    recipeModel.ID = "1";
-    recipeModel.recipeIngredient = "Test";
-    recipeModel.recipeInstructions = "Test2";
 
-    recipeModel.insert();
-    recipeModel.recipeInstructions = "Test5";
-    recipeModel.update();
-    //recipeModel.delete();
+    recipeModel.ID = 4;
+    recipeModel.title = "Spätzle mit Steack";
+    recipeModel.ingredient = cleanUpStringForDB(
+        '["Zwiebeln, gelb 1 St.","Paprika, grün 1 St.","Paprika, gelb 1 St.","Champignons, weiß 200 g","Minutensteaks vom Schwein 500 g","Salz Prise","Pfeffer, schwarz Prise","Spätzle, frisch 600 g","Petersilie, frisch 10 g","Öl 2 EL","Tomatenmark 20 g","Gemüsebrühe 650 ml","italienische Kräuter, getrocknet 1 TL","Frischkäse, natur 150 g"]'
+    );
 
-    var test = new SQliter();
-    var testmodel: any = test.findOne("Recipes", recipeSchema);
-    testmodel = test.findOne("Recipes", recipeSchema);
+    recipeModel.instructions = cleanUpStringForDB(
+        '[{"@type":"HowToStep","text":"Zwiebel halbieren und schälen. Paprika waschen, halbieren, Strunk und Kerngehäuse entfernen und in Streifen schneiden. Champignons ggf. mit Küchenkrepp säubern und je nach Größe vierteln oder halbieren. Minutensteaks waschen, trocken tupfen und in Streifen schneiden. Schnitzelstreifen kräftig mit Salz und Pfeffer würzen. Spätzle in den tiefen Dampfgaraufsatz geben."},{"@type":"HowToStep","text":"Petersilie waschen, trocken schütteln und grobe Stiele entfernen. In den Mixbehälter Petersilie geben und 4 Sek./Stufe 8 zerkleinern. Anschließend in eine Schüssel umfüllen."},{"@type":"HowToStep","text":"In den Mixbehälter Zwiebel geben und 4 Sek./Stufe 8 zerkleinern. Mit dem Spatel nach unten schieben. Schnitzelstreifen und Öl in den Mixtopf geben und Linkslauf/7 Min./Anbratstufe braten. Tomatenmark, Gemüsebrühe, Paprika, Champignons und Kräuter zugeben. Tiefen Dampfgaraufsatz auf den Mixbehälter geben, verschließen und 25 Min./Dampfgarstufe garen."},{"@type":"HowToStep","text":"Nach Ende der Garzeit tiefen Dampfgaraufsatz absetzen und beiseite stellen. Frischkäse in den Mixbehälter geben und Linkslauf/1 Min /100 °C/Stufe 1 verrühren. Schnitzeltopf mit Salz und Pfeffer abschmecken. Spätzle auf Teller geben, Schnitzeltopf darübergeben und mit Petersilie bestreut servieren. Guten Appetit!"}]'
+    );
 
-    console.log("testmodel 2: " + testmodel.recipeInstructions);
+    // recipeModel.insert();
 
-    // var test = recipeSchema.testGetAll();
-
-    // console.log("test: " + test);
     return (
         <View style={styles.container}>
-            <Text>Tab [Home]</Text>
+            <View style={styles.topBox}>
+                <Pressable>
+                    <Entypo name="plus" size={34} style={styles.icon} />
+                </Pressable>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Suchen"
+                ></TextInput>
+            </View>
+            <ScrollView>
+                {recipeModelList.map((model: any, index: number) => (
+                    <View key={index} style={styles.card}>
+                        <Text style={styles.cardTitle}>{model.title}</Text>
+                        <View style={styles.cardInner}>
+                            <Text style={styles.cardSubTitle}>Zutaten:</Text>
+                            <Text style={styles.cardText}>
+                                {
+                                    //model.ingredient.substring(0, 50)
+                                    cleanUpStringForView(
+                                        model.ingredient
+                                    ).substring(0, 43)
+                                }
+                            </Text>
+                        </View>
+                        <View style={styles.cardInner}>
+                            <Text style={styles.cardSubTitle}>Anleitung: </Text>
+                            <Text style={styles.cardText}>
+                                {cleanUpStringForView(
+                                    model.instructions
+                                ).substring(0, 100)}
+                            </Text>
+                        </View>
+                    </View>
+                ))}
+            </ScrollView>
         </View>
     );
 }
@@ -32,7 +79,52 @@ export default function Tab() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+        marginTop: 50,
+        marginLeft: 20,
+        marginRight: 20,
+    },
+    card: {
+        borderColor: "black",
+        borderRadius: 20,
+        borderWidth: 3,
+        marginBottom: 10,
+    },
+    cardInner: {
+        flexDirection: "row",
+        marginBottom: 10,
+    },
+    topBox: {
+        flexDirection: "column",
+        marginBottom: 30,
+    },
+    cardText: {
+        flexGrow: 1,
+        paddingTop: 5,
+        flexShrink: 1,
+    },
+    cardTitle: {
+        padding: 10,
+        fontWeight: "bold",
+    },
+    cardSubTitle: {
+        flexGrow: 1,
+        fontWeight: "bold",
+        paddingTop: 5,
+        paddingLeft: 5,
+    },
+    searchInput: {
+        flexGrow: 1,
+        borderColor: "black",
+        borderRadius: 20,
+        borderWidth: 3,
+        margin: 10,
+        textAlign: "center",
+        fontSize: 24,
+    },
+    addButton: {},
+    icon: {
+        alignSelf: "flex-end",
+        color: "black",
+        paddingBottom: 10,
     },
 });

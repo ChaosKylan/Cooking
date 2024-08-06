@@ -18,14 +18,12 @@ class SQliter {
     }
 
     constructor(_dbName = "cooking.db") {
-        //   this.db = SQLite.openDatabaseAsync(_dbName);
         this.db = SQLite.openDatabaseSync(_dbName);
     }
     /*
         Create SqLite Table from Schema
     */
     createTable(_schema: any, name: string) {
-        //this.executeSqlWihtout("DROP TABLE " + name);
         let pks = " PRIMARY KEY (";
         const objKey = Object.keys(_schema)[0];
         let query = `CREATE TABLE IF NOT EXISTS ${name} (`;
@@ -45,9 +43,10 @@ class SQliter {
         });
         pks = pks.substring(0, pks.length - 1);
         query += pks + "))";
-
+        //this.executeSqlWihtout("DROP TABLE IF EXISTS " + name);
         this.executeSqlWihtout(query);
     }
+
     getDataType(type: "string" | "number" | "boolean"): any {
         switch (type) {
             case "string":
@@ -60,9 +59,9 @@ class SQliter {
                 return "TEXT";
         }
     }
-    // Funktion zum Ausführen von SQL-Abfragen, die keine Ergebnisse zurückgeben
     async executeSqlWihtout(sql: string, params = []) {
         try {
+            //   console.log(sql);
             const result = await this.db.runSync(sql);
             return result;
         } catch (e) {
@@ -70,13 +69,11 @@ class SQliter {
         }
     }
 
-    // Funktion zum Ausführen von SQL-Abfragen, die Ergebnisse zurückgeben
     async executeSqlWithReturn(sql: string) {
         console.log(sql);
-        // const rows = await this.db.getAllSync(sql);
         const rows = await this.db.getAllAsync(sql);
         console.log("SELECT: " + rows);
-        return rows; // (row = id, value, initValue)
+        return rows;
     }
 
     findOne(name: string, schema: Schema) {
@@ -85,6 +82,21 @@ class SQliter {
 
             var model = this.generateModelFromSchema(name, schema, row[0]);
             return model;
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    findAll(name: string, schema: Schema) {
+        try {
+            var modelList = [];
+            const row: any = this.db.getAllSync(`SELECT * FROM ${name}`);
+            for (var i = 0; i < row.length; i++) {
+                var model = this.generateModelFromSchema(name, schema, row[i]);
+                modelList.push(model);
+            }
+
+            return modelList;
         } catch (e) {
             console.log(e);
         }
@@ -151,11 +163,12 @@ class SQliter {
                 Object.keys(this.schema).forEach((key) => {
                     const schemaDetails = this.schema[key];
                     queryPartOne += `${key} ,`;
-                    queryPartTwo += `"${this[key]}" ,`;
+                    queryPartTwo += `'${this[key]}' ,`;
                 });
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
+                // console.log(queryPartOne + queryPartTwo + queryPartThree);
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );

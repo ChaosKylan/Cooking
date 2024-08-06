@@ -6,10 +6,13 @@ export const recipeSchema: Schema = {
         PK: true,
         NotNull: true,
     },
-    recipeIngredient: {
+    title: {
         type: "string",
     },
-    recipeInstructions: {
+    ingredient: {
+        type: "string",
+    },
+    instructions: {
         type: "string",
     },
 };
