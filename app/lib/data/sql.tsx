@@ -70,9 +70,9 @@ class SQliter {
     }
 
     async executeSqlWithReturn(sql: string) {
-        console.log(sql);
-        const rows = await this.db.getAllAsync(sql);
-        console.log("SELECT: " + rows);
+        console.log(sql + " Test");
+        const rows = this.db.getAllSync(sql);
+        // console.log("SELECT: " + rows);
         return rows;
     }
 
@@ -97,6 +97,15 @@ class SQliter {
             }
 
             return modelList;
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    getMaxID(name: string, schema: Schema) {
+        try {
+            var data = this.db.getAllSync(`SELECT MAX(ID) as ID FROM ${name}`);
+            console.log(data);
+            return data;
         } catch (e) {
             console.log(e);
         }
@@ -163,12 +172,26 @@ class SQliter {
                 Object.keys(this.schema).forEach((key) => {
                     const schemaDetails = this.schema[key];
                     queryPartOne += `${key} ,`;
-                    queryPartTwo += `'${this[key]}' ,`;
+                    if (key == "ID") {
+                        var models = this.sqliter.findAll(
+                            this.name,
+                            this.schema
+                        );
+                        var row = models?.length;
+                        row = row ?? 0;
+                        if (row != null || row != "") {
+                            queryPartTwo += `'${row + 1}' ,`;
+                        } else {
+                            queryPartTwo += `'${0}' ,`;
+                        }
+                    } else {
+                        queryPartTwo += `'${this[key]}' ,`;
+                    }
                 });
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                // console.log(queryPartOne + queryPartTwo + queryPartThree);
+                //console.log(queryPartOne + queryPartTwo + queryPartThree);
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );

@@ -6,6 +6,14 @@ export default function Layout() {
         <ThemeProvider>
             <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                    name="screens/addRecipe"
+                    options={{
+                        headerShown: false,
+                        // headerTitle: "Recipe",
+                        // headerTitleAlign: "center",
+                    }}
+                ></Stack.Screen>
             </Stack>
         </ThemeProvider>
     );
