@@ -4,19 +4,17 @@ import {
     StyleSheet,
     ScrollView,
     TextInput,
-    Touchable,
-    Button,
     Pressable,
-    Dimensions,
     TouchableWithoutFeedback,
     Keyboard,
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
 import { recipeSchema } from "../model/recipeModel";
 import SQliter from "../lib/data/sql";
-import { cleanUpStringForDB, cleanUpStringForView } from "../lib/cleanUpString";
-import { useState } from "react";
-import { useNavigation, useRouter } from "expo-router";
+import { cleanUpStringForView } from "../lib/cleanUpString";
+import { useState, useContext } from "react";
+import { useRouter } from "expo-router";
+import { GlobalStateContext } from "../lib/provider/GlobalState";
 
 export default function Tab() {
     var db = new SQliter();
@@ -24,21 +22,16 @@ export default function Tab() {
         db.findAll("Recipes", recipeSchema)
     );
     var [searchText, setSearchText] = useState("");
+    const { recipeList, setRecipeList } = useContext(GlobalStateContext);
 
-    var recipeModel = SQliter.Model("Recipes", recipeSchema);
+    function addRecipeModel(model: any) {
+        setRecipeModelList((recipeModelList: any) => [
+            ...recipeModelList,
+            model,
+        ]);
+    }
 
-    recipeModel.ID = 1;
-    recipeModel.title = "Spätzle mit Steack";
-    recipeModel.ingredient = cleanUpStringForDB(
-        '["Zwiebeln, gelb 1 St.","Paprika, grün 1 St.","Paprika, gelb 1 St.","Champignons, weiß 200 g","Minutensteaks vom Schwein 500 g","Salz Prise","Pfeffer, schwarz Prise","Spätzle, frisch 600 g","Petersilie, frisch 10 g","Öl 2 EL","Tomatenmark 20 g","Gemüsebrühe 650 ml","italienische Kräuter, getrocknet 1 TL","Frischkäse, natur 150 g"]'
-    );
-
-    recipeModel.instructions = cleanUpStringForDB(
-        '[{"@type":"HowToStep","text":"Zwiebel halbieren und schälen. Paprika waschen, halbieren, Strunk und Kerngehäuse entfernen und in Streifen schneiden. Champignons ggf. mit Küchenkrepp säubern und je nach Größe vierteln oder halbieren. Minutensteaks waschen, trocken tupfen und in Streifen schneiden. Schnitzelstreifen kräftig mit Salz und Pfeffer würzen. Spätzle in den tiefen Dampfgaraufsatz geben."},{"@type":"HowToStep","text":"Petersilie waschen, trocken schütteln und grobe Stiele entfernen. In den Mixbehälter Petersilie geben und 4 Sek./Stufe 8 zerkleinern. Anschließend in eine Schüssel umfüllen."},{"@type":"HowToStep","text":"In den Mixbehälter Zwiebel geben und 4 Sek./Stufe 8 zerkleinern. Mit dem Spatel nach unten schieben. Schnitzelstreifen und Öl in den Mixtopf geben und Linkslauf/7 Min./Anbratstufe braten. Tomatenmark, Gemüsebrühe, Paprika, Champignons und Kräuter zugeben. Tiefen Dampfgaraufsatz auf den Mixbehälter geben, verschließen und 25 Min./Dampfgarstufe garen."},{"@type":"HowToStep","text":"Nach Ende der Garzeit tiefen Dampfgaraufsatz absetzen und beiseite stellen. Frischkäse in den Mixbehälter geben und Linkslauf/1 Min /100 °C/Stufe 1 verrühren. Schnitzeltopf mit Salz und Pfeffer abschmecken. Spätzle auf Teller geben, Schnitzeltopf darübergeben und mit Petersilie bestreut servieren. Guten Appetit!"}]'
-    );
-    const navigation = useNavigation();
     const router = useRouter();
-    // recipeModel.insert();
     function searchCheck(model: any) {
         if (!searchText || searchText == "") return true;
         if (model.title.indexOf(searchText) > 0) {
@@ -47,11 +40,18 @@ export default function Tab() {
             return false;
         }
     }
-
+    //screens/addRecipe
     return (
         <View style={styles.container}>
             <View style={styles.topBox}>
-                <Pressable onPress={() => router.push("../screens/addRecipe")}>
+                {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
+                <Pressable
+                    onPress={() => {
+                        router.push({
+                            pathname: `screens/addRecipe`,
+                        });
+                    }}
+                >
                     <Entypo name="plus" size={34} style={styles.icon} />
                 </Pressable>
                 <TextInput
@@ -67,7 +67,7 @@ export default function Tab() {
                 accessible={false}
             >
                 <ScrollView>
-                    {recipeModelList
+                    {recipeList
                         .filter((model: any) => searchCheck(model))
                         .map((model: any, index: number) => (
                             <View key={index} style={styles.card}>

@@ -7,12 +7,13 @@ import {
     TextInput,
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
-import { useNavigation, useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useNavigation } from "expo-router";
+import React, { useState, useContext } from "react";
 import { Picker } from "@react-native-picker/picker";
 
 import SQliter from "../lib/data/sql";
 import { recipeSchema } from "../model/recipeModel";
+import { GlobalStateContext } from "../lib/provider/GlobalState";
 
 var ingredientCount: number = 0;
 
@@ -20,39 +21,56 @@ interface Ing {
     id: number;
     value: string;
     quantity: string;
+    unit: string;
 }
 
-export default function addRecipe() {
-    var db = new SQliter();
+export default function AddRecipe() {
     const navigation = useNavigation();
-    const router = useRouter();
     const [recipeName, setRecipeName] = useState<string>();
     const [ingredients, setIngredients] = useState<Array<Ing>>([]);
     const [instructions, setInstructions] = useState<string>();
-    const [selectUnit, setSelectUnit] = useState();
 
-    var recipeModel = SQliter.Model("Recipes", recipeSchema);
-
+    const { recipeList, setRecipeList } = useContext(GlobalStateContext);
     function addIngredient() {
         setIngredients((prevIngredients) => [
             ...prevIngredients,
-            { id: ingredientCount, value: "", quantity: "" }, // Eindeutige ID und leerer Wert
+            { id: ingredientCount, value: "", quantity: "", unit: "g" },
         ]);
         ++ingredientCount;
     }
-    function updateIngredientValue(id: number, text: string, amount: string) {
+
+    function addRecipeModel(model: any) {
+        setRecipeList((recipeModelList: any) => [...recipeModelList, model]);
+    }
+
+    function updateIngredientValue(
+        id: number,
+        _text: string,
+        _quantity: string,
+        _unit: string
+    ) {
         setIngredients((prevIngredients) =>
             prevIngredients.map((ingredient) =>
                 ingredient.id === id
-                    ? { ...ingredient, value: text, quantity: amount }
+                    ? {
+                          ...ingredient,
+                          value: _text,
+                          quantity: _quantity,
+                          unit: _unit,
+                      }
                     : ingredient
             )
         );
     }
     function save() {
         var ingJsonString: string = " ";
+
+        var recipeModel = SQliter.Model("Recipes", recipeSchema);
         for (var i: number = 0; i < ingredients.length; i++) {
-            ingJsonString += ingredients[i].value + " | ";
+            //  ingJsonString += ingredients[i].value +" , " +  + " | ";
+            ingJsonString += `${ingredients[i].value.trim()} , ${ingredients[
+                i
+            ].quantity.trim()} ${ingredients[i].unit.trim()} | `;
         }
 
         if (recipeName != "" || recipeName != null) {
@@ -62,8 +80,11 @@ export default function addRecipe() {
                 .substring(0, ingJsonString.length);
             recipeModel.instructions = instructions ?? " ";
 
-            recipeModel.insert();
-            // navigation.goBack();
+            recipeModel = recipeModel.insert();
+
+            addRecipeModel(recipeModel);
+
+            navigation.goBack();
         }
     }
     return (
@@ -90,79 +111,101 @@ export default function addRecipe() {
                 </Pressable>
             </View>
             <ScrollView>
-                <Text>RezeptName</Text>
-                <TextInput
-                    key={"recipeName"}
-                    style={styles.ingInput}
-                    placeholder="Rezeptname"
-                    onChangeText={setRecipeName}
-                ></TextInput>
-                <Text>Zutaten</Text>
-                {ingredients.map((ingredient) => (
-                    <View key={ingredient.id} style={styles.horiContainer}>
-                        <TextInput
-                            style={styles.ingInput}
-                            placeholder="Zutat eingeben"
-                            value={ingredient.value}
-                            onChangeText={(text) =>
-                                updateIngredientValue(
-                                    ingredient.id,
-                                    text,
-                                    ingredient.quantity
-                                )
-                            }
-                        />
-                        <TextInput
-                            style={styles.amountInput}
-                            placeholder="Menge"
-                            value={ingredient.quantity}
-                            keyboardType="number-pad"
-                            onChangeText={(text) =>
-                                updateIngredientValue(
-                                    ingredient.id,
-                                    ingredient.value,
-                                    text
-                                )
-                            }
-                        ></TextInput>
-                        <View style={styles.pickerContainer}>
-                            <TextInput
-                                style={styles.pickerText}
-                                editable={false}
-                                value={selectUnit}
-                            ></TextInput>
-                            <Picker
-                                style={styles.picker}
-                                selectedValue={selectUnit}
-                                onValueChange={(itemValue, itemIndex) =>
-                                    setSelectUnit(itemValue)
-                                }
-                            >
-                                <Picker.Item label="g" value="g"></Picker.Item>
-                                <Picker.Item
-                                    label="ml"
-                                    value="ml"
-                                ></Picker.Item>
-                                <Picker.Item
-                                    label="stk"
-                                    value="stk"
-                                ></Picker.Item>
-                            </Picker>
+                <View style={styles.contentContainer}>
+                    <Text>RezeptName</Text>
+                    <TextInput
+                        key={"recipeName"}
+                        style={styles.ingInput}
+                        placeholder="Rezeptname"
+                        onChangeText={setRecipeName}
+                    ></TextInput>
+                </View>
+                <View style={styles.contentContainer}>
+                    <Text>Zutaten</Text>
+                    {ingredients.map((ingredient) => (
+                        <View key={ingredient.id}>
+                            <View style={styles.horiContainer}>
+                                <TextInput
+                                    style={styles.ingInput}
+                                    placeholder="Zutat eingeben"
+                                    value={ingredient.value}
+                                    onChangeText={(text) =>
+                                        updateIngredientValue(
+                                            ingredient.id,
+                                            text,
+                                            ingredient.quantity,
+                                            ingredient.unit
+                                        )
+                                    }
+                                />
+                            </View>
+                            <View style={styles.horiContainer}>
+                                <TextInput
+                                    style={styles.amountInput}
+                                    placeholder="Menge"
+                                    value={ingredient.quantity}
+                                    keyboardType="number-pad"
+                                    onChangeText={(text) =>
+                                        updateIngredientValue(
+                                            ingredient.id,
+                                            ingredient.value,
+                                            text,
+                                            ingredient.unit
+                                        )
+                                    }
+                                ></TextInput>
+                                <View style={styles.pickerContainer}>
+                                    <Picker
+                                        style={styles.picker}
+                                        mode="dropdown"
+                                        selectedValue={ingredient.unit}
+                                        onValueChange={(itemValue, itemIndex) =>
+                                            updateIngredientValue(
+                                                ingredient.id,
+                                                ingredient.value,
+                                                ingredient.quantity,
+                                                itemValue
+                                            )
+                                        }
+                                    >
+                                        <Picker.Item
+                                            label="g"
+                                            value="g"
+                                        ></Picker.Item>
+                                        <Picker.Item
+                                            label="ml"
+                                            value="ml"
+                                            style={{
+                                                margin: 0,
+                                                padding: 0,
+                                            }}
+                                        ></Picker.Item>
+                                        <Picker.Item
+                                            label="st"
+                                            value="st"
+                                            style={{ margin: 0, padding: 0 }}
+                                        ></Picker.Item>
+                                    </Picker>
+                                </View>
+                            </View>
                         </View>
-                    </View>
-                ))}
-                <Pressable onPress={addIngredient}>
-                    <View style={styles.horiContainer}>
-                        <Entypo name="plus" size={34} style={styles.icon} />
-                        <Text style={styles.txtAdd}> add </Text>
-                    </View>
-                </Pressable>
-                <Text>Anleitung</Text>
-                <TextInput
-                    multiline={true}
-                    style={styles.instInput}
-                    onChangeText={setInstructions}
-                ></TextInput>
+                    ))}
+                    <Pressable onPress={addIngredient}>
+                        <View style={styles.horiContainer}>
+                            <Entypo name="plus" size={34} style={styles.icon} />
+                            <Text style={styles.txtAdd}> add </Text>
+                        </View>
+                    </Pressable>
+                </View>
+
+                <View style={styles.contentContainer}>
+                    <Text>Anleitung</Text>
+                    <TextInput
+                        multiline={true}
+                        style={styles.instInput}
+                        onChangeText={setInstructions}
+                    ></TextInput>
+                </View>
             </ScrollView>
         </View>
     );
@@ -184,6 +227,13 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         borderBottomColor: "black",
         borderBottomWidth: 3,
+        marginBottom: 10,
+    },
+    contentContainer: {
+        borderColor: "black",
+        borderRadius: 20,
+        borderWidth: 1,
+        padding: 10,
         marginBottom: 10,
     },
     headerText: {
@@ -249,6 +299,7 @@ const styles = StyleSheet.create({
         marginRight: 5,
         textAlign: "center",
         fontSize: 18,
+        width: 50,
     },
     instInput: {
         flexGrow: 1,
@@ -265,7 +316,6 @@ const styles = StyleSheet.create({
     },
     pickerContainer: {
         flex: 1,
-        flexDirection: "row",
         borderColor: "black",
         borderRadius: 10,
         borderWidth: 1,
@@ -273,11 +323,9 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginRight: 5,
     },
-    pickerText: {
-        flexGrow: 2,
-        fontSize: 18,
-    },
     picker: {
         flexGrow: 1,
+        margin: 0,
+        padding: 0,
     },
 });

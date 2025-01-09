@@ -76,10 +76,16 @@ class SQliter {
         return rows;
     }
 
-    findOne(name: string, schema: Schema) {
+    findOne(name: string, schema: Schema, where: string = "") {
         try {
-            const row: any = this.db.getAllSync(`SELECT * FROM ${name}`);
-
+            var row: any = "";
+            if (where != "") {
+                row = this.db.getAllSync(`SELECT * FROM ${name}`);
+            } else {
+                row = this.db.getAllSync(
+                    `SELECT * FROM ${name} WHERE ${where}`
+                );
+            }
             var model = this.generateModelFromSchema(name, schema, row[0]);
             return model;
         } catch (e) {
@@ -168,6 +174,7 @@ class SQliter {
                 var queryPartOne = `INSERT INTO ${this.name} (`;
                 var queryPartTwo = `) VALUES ( `;
                 var queryPartThree = `)`;
+                var newID = 0;
 
                 Object.keys(this.schema).forEach((key) => {
                     const schemaDetails = this.schema[key];
@@ -181,6 +188,7 @@ class SQliter {
                         row = row ?? 0;
                         if (row != null || row != "") {
                             queryPartTwo += `'${row + 1}' ,`;
+                            newID = row + 1;
                         } else {
                             queryPartTwo += `'${0}' ,`;
                         }
@@ -195,6 +203,8 @@ class SQliter {
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );
+                this.ID = newID;
+                return this;
             }
             update() {
                 var queryPartOne = `UPDATE ${this.name} SET `;
