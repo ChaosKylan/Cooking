@@ -6,7 +6,6 @@
         "orientation": "portrait",
         "scheme": "your-app-scheme",
         "icon": "./assets/icon.png",
-        "newArchEnabled": true,
         "userInterfaceStyle": "light",
         "splash": {
             "image": "./assets/splash.png",
@@ -23,6 +22,8 @@
             }
         },
         "web": {
+            "bundler": "metro",
+            "output": "static",
             "favicon": "./assets/favicon.png"
         },
         "plugins": ["expo-router", "expo-sqlite"]

@@ -7,39 +7,76 @@ import {
     Pressable,
     TouchableWithoutFeedback,
     Keyboard,
+    Modal,
+    LayoutRectangle,
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
-import { recipeSchema } from "../model/recipeModel";
-import SQliter from "../lib/data/sql";
 import { cleanUpStringForView } from "../lib/cleanUpString";
-import { useState, useContext } from "react";
+import { useState, useContext, useRef } from "react";
 import { useRouter } from "expo-router";
 import { GlobalStateContext } from "../lib/provider/GlobalState";
+import SQliter from "../lib/data/sql";
+import { recipeSchema } from "../model/recipeModel";
+import { Recipe, Layout } from "../model/templates";
 
 export default function Tab() {
-    var db = new SQliter();
-    var [recipeModelList, setRecipeModelList]: any = useState(
-        db.findAll("Recipes", recipeSchema)
-    );
     var [searchText, setSearchText] = useState("");
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+    const recipeRefs = useRef<{ [key: number]: LayoutRectangle }>({});
 
-    function addRecipeModel(model: any) {
-        setRecipeModelList((recipeModelList: any) => [
-            ...recipeModelList,
-            model,
-        ]);
-    }
+    // function addRecipeModel(model: any) {
+    //     setRecipeList((recipeModelList: any) => [...recipeModelList, model]);
+    //  }
+
+    // var db = new SQliter();
+
+    // db.executeSqlWihtout("DELETE FROM Recipes");
 
     const router = useRouter();
-    function searchCheck(model: any) {
+    function searchCheck(model: Recipe) {
         if (!searchText || searchText == "") return true;
-        if (model.title.indexOf(searchText) > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return model.title.includes(searchText);
     }
+
+    const handleLongPress = (recipe: Recipe, layout: Layout) => {
+        setSelectedRecipe(recipe);
+        setModalPosition({
+            top: layout.y - layout.height - 100,
+            left: layout.x + 70,
+        });
+
+        setModalVisible(true);
+    };
+
+    const handleEdit = () => {
+        if (selectedRecipe != null) {
+            setModalVisible(false);
+            router.push({
+                pathname: `screens/addRecipe`,
+                params: { recipeID: selectedRecipe.ID },
+            });
+        }
+    };
+
+    const handleDelete = () => {
+        if (selectedRecipe != null) {
+            setRecipeList(
+                recipeList.filter(
+                    (recipe: Recipe) => recipe.ID !== selectedRecipe.ID
+                )
+            );
+
+            //var recipeModel = SQliter.Model(Recipes ,recipeSchema);
+            var recipeModel = SQliter.Model(recipeSchema);
+            recipeModel.ID = selectedRecipe.ID;
+            recipeModel.delete();
+        }
+        setModalVisible(false);
+    };
+
     //screens/addRecipe
     return (
         <View style={styles.container}>
@@ -49,6 +86,7 @@ export default function Tab() {
                     onPress={() => {
                         router.push({
                             pathname: `screens/addRecipe`,
+                            //params: { recipeID: 1 },
                         });
                     }}
                 >
@@ -68,36 +106,115 @@ export default function Tab() {
             >
                 <ScrollView>
                     {recipeList
-                        .filter((model: any) => searchCheck(model))
-                        .map((model: any, index: number) => (
-                            <View key={index} style={styles.card}>
-                                <Text style={styles.cardTitle}>
-                                    {model.title}
-                                </Text>
-                                <View style={styles.cardInner}>
-                                    <Text style={styles.cardSubTitle}>
-                                        Zutaten:
+                        .filter((model: Recipe) => searchCheck(model))
+                        .map((model: Recipe, index: number) => (
+                            <Pressable
+                                key={index}
+                                onPress={() => {
+                                    router.push({
+                                        pathname: `screens/viewRecipe`,
+                                        params: { recipeID: model.ID },
+                                    });
+                                }}
+                                onLongPress={(event) =>
+                                    handleLongPress(
+                                        model,
+                                        recipeRefs.current[index]
+                                    )
+                                }
+                                onLayout={(event) => {
+                                    recipeRefs.current[index] =
+                                        event.nativeEvent.layout;
+                                }}
+                            >
+                                <Modal
+                                    animationType="none"
+                                    transparent={true}
+                                    visible={modalVisible}
+                                    onRequestClose={() => {
+                                        setModalVisible(!modalVisible);
+                                    }}
+                                >
+                                    <TouchableWithoutFeedback
+                                        onPress={() => setModalVisible(false)}
+                                    >
+                                        <View style={styles.centeredView}>
+                                            <TouchableWithoutFeedback>
+                                                <View
+                                                    style={[
+                                                        styles.modalView,
+                                                        {
+                                                            top: modalPosition.top,
+                                                            left: modalPosition.left,
+                                                        },
+                                                    ]}
+                                                >
+                                                    <View
+                                                        style={
+                                                            styles.iconContainer
+                                                        }
+                                                    >
+                                                        <Pressable
+                                                            style={
+                                                                styles.iconButton
+                                                            }
+                                                            onPress={handleEdit}
+                                                        >
+                                                            <Entypo
+                                                                name="edit"
+                                                                size={44}
+                                                                color="black"
+                                                            />
+                                                        </Pressable>
+                                                        <Pressable
+                                                            style={
+                                                                styles.iconButton
+                                                            }
+                                                            onPress={
+                                                                handleDelete
+                                                            }
+                                                        >
+                                                            <Entypo
+                                                                name="trash"
+                                                                size={44}
+                                                                color="black"
+                                                            />
+                                                        </Pressable>
+                                                    </View>
+                                                </View>
+                                            </TouchableWithoutFeedback>
+                                        </View>
+                                    </TouchableWithoutFeedback>
+                                </Modal>
+                                <View style={styles.card}>
+                                    <Text style={styles.cardTitle}>
+                                        {model.title}
                                     </Text>
-                                    <Text style={styles.cardText}>
-                                        {
-                                            //model.ingredient.substring(0, 50)
-                                            cleanUpStringForView(
-                                                model.ingredient
-                                            ).substring(0, 43)
-                                        }
-                                    </Text>
+                                    <View style={styles.cardInner}>
+                                        <Text style={styles.cardSubTitle}>
+                                            Zutaten:
+                                        </Text>
+                                        <Text style={styles.cardText}>
+                                            {
+                                                //model.ingredient.substring(0, 50)
+                                                cleanUpStringForView(
+                                                    model.ingredient
+                                                ).substring(0, 43)
+                                            }
+                                        </Text>
+                                    </View>
+                                    <View style={styles.cardInner}>
+                                        <Text style={styles.cardSubTitle}>
+                                            Anleitung:{" "}
+                                        </Text>
+                                        <Text style={styles.cardText}>
+                                            {cleanUpStringForView(
+                                                model.instructions
+                                            ).substring(0, 100)}
+                                        </Text>
+                                    </View>
                                 </View>
-                                <View style={styles.cardInner}>
-                                    <Text style={styles.cardSubTitle}>
-                                        Anleitung:{" "}
-                                    </Text>
-                                    <Text style={styles.cardText}>
-                                        {cleanUpStringForView(
-                                            model.instructions
-                                        ).substring(0, 100)}
-                                    </Text>
-                                </View>
-                            </View>
+                            </Pressable>
                         ))}
                 </ScrollView>
             </TouchableWithoutFeedback>
@@ -155,5 +272,37 @@ const styles = StyleSheet.create({
         alignSelf: "flex-end",
         color: "black",
         paddingBottom: 10,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22,
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 10,
+        width: "30%",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    iconContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        width: "100%",
+        paddingLeft: 5,
+    },
+    iconButton: {
+        flexDirection: "row",
+        alignItems: "center",
     },
 });

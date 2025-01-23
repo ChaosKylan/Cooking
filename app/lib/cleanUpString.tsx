@@ -1,4 +1,4 @@
-export function cleanUpStringForDB(data: string): string {
+export default function cleanUpStringForDB(data: string): string {
     var cleanUp: string = "";
     if (data.charAt(0) == "[") {
         cleanUp += data.substring(1);

@@ -23,13 +23,12 @@ class SQliter {
     /*
         Create SqLite Table from Schema
     */
-    createTable(_schema: any, name: string) {
+    createTable(_schema: Schema, name: string) {
         let pks = " PRIMARY KEY (";
-        const objKey = Object.keys(_schema)[0];
+        //const objKey = Object.keys(_schema.columns)[0];
         let query = `CREATE TABLE IF NOT EXISTS ${name} (`;
-        Object.keys(_schema).forEach((key) => {
-            const schemaDetails = _schema[key];
-
+        Object.keys(_schema.columns).forEach((key) => {
+            const schemaDetails = _schema.columns[key];
             query += `"${key}" ${this.getDataType(schemaDetails.type)} `;
 
             if (schemaDetails.NotNull == true) {
@@ -86,19 +85,24 @@ class SQliter {
                     `SELECT * FROM ${name} WHERE ${where}`
                 );
             }
-            var model = this.generateModelFromSchema(name, schema, row[0]);
+            var model = this.generateModelFromSchema(schema, row[0]);
             return model;
         } catch (e) {
             console.log(e);
         }
     }
 
-    findAll(name: string, schema: Schema) {
+    findAll(name: string, schema: Schema, where: string = "") {
         try {
             var modelList = [];
-            const row: any = this.db.getAllSync(`SELECT * FROM ${name}`);
+            var query = `SELECT * FROM ${name} `;
+            if (where != "") {
+                query += `WHERE ${where}`;
+            }
+            const row: any = this.db.getAllSync(query);
+
             for (var i = 0; i < row.length; i++) {
-                var model = this.generateModelFromSchema(name, schema, row[i]);
+                var model = this.generateModelFromSchema(schema, row[i]);
                 modelList.push(model);
             }
 
@@ -107,6 +111,9 @@ class SQliter {
             console.log(e);
         }
     }
+
+    getRelation(name: string, schema: Schema, relation: string) {}
+
     getMaxID(name: string, schema: Schema) {
         try {
             var data = this.db.getAllSync(`SELECT MAX(ID) as ID FROM ${name}`);
@@ -123,32 +130,28 @@ class SQliter {
         }
     }
 
-    public static Model(
-        name: string,
-        schema: Schema,
-        data: { [key: string]: any } = {}
-    ) {
+    public static Model(schema: Schema, data: { [key: string]: any } = {}) {
         var sqlite = new SQliter();
-        return sqlite.generateModelFromSchema(name, schema, data);
+        return sqlite.generateModelFromSchema(schema, data);
     }
 
     generateModelFromSchema(
-        _name: string,
         _schema: Schema,
-        data: { [key: string]: any } = {}
+        _data: { [key: string]: any } = {}
     ) {
         class DynamicModel {
             [key: string]: any;
             private schema: Schema;
             private name: string;
             private sqliter: SQliter;
+            private relations: any;
 
             constructor(data: { [key: string]: any }) {
                 this.schema = _schema;
-                this.name = _name;
+                this.name = _schema.tableName;
                 this.sqliter = new SQliter();
-                Object.keys(this.schema).forEach((key) => {
-                    const schemaDetails = this.schema[key];
+                Object.keys(this.schema.columns).forEach((key) => {
+                    const schemaDetails = this.schema.columns[key];
                     if (data[key] !== undefined) {
                         this[key] = data[key];
                     } else {
@@ -177,7 +180,7 @@ class SQliter {
                 var newID = 0;
 
                 Object.keys(this.schema).forEach((key) => {
-                    const schemaDetails = this.schema[key];
+                    //const schemaDetails = this.schema.columns[key];
                     queryPartOne += `${key} ,`;
                     if (key == "ID") {
                         var models = this.sqliter.findAll(
@@ -227,8 +230,28 @@ class SQliter {
                 });
                 this.sqliter.executeSqlWihtout(query);
             }
+            join(targetScheme: Schema, relationSchema?: Schema) {
+                if (relationSchema) {
+                    var relationResult = this.sqliter.findAll(
+                        relationSchema.tableName,
+                        relationSchema,
+                        `${relationSchema.columns.recipeID} == ${this.ID}`
+                    );
+
+                    var relationID = relationResult
+                        ? relationResult.map((r) => r.ingredientID)
+                        : [];
+                } else {
+                    var relation = this.sqliter.findAll(
+                        targetScheme.tableName,
+                        targetScheme,
+                        `${targetScheme.columns.ID} == ${this.ID}`
+                    );
+                    return relation;
+                }
+            }
         }
-        return new DynamicModel(data);
+        return new DynamicModel(_data);
     }
 }
 

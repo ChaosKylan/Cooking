@@ -7,14 +7,22 @@ export default function Layout() {
     return (
         <ThemeProvider>
             <GlobalStateProvider>
+                <StatusBar style="auto" />
                 <Stack>
-                    <StatusBar style="light" />
                     <Stack.Screen
                         name="(tabs)"
                         options={{ headerShown: false }}
                     />
                     <Stack.Screen
                         name="screens/addRecipe"
+                        options={{
+                            headerShown: false,
+                            // headerTitle: "Recipe",
+                            // headerTitleAlign: "center",
+                        }}
+                    ></Stack.Screen>
+                    <Stack.Screen
+                        name="screens/viewRecipe"
                         options={{
                             headerShown: false,
                             // headerTitle: "Recipe",

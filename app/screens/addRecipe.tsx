@@ -8,33 +8,66 @@ import {
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Picker } from "@react-native-picker/picker";
-
+import { useLocalSearchParams } from "expo-router";
 import SQliter from "../lib/data/sql";
 import { recipeSchema } from "../model/recipeModel";
 import { GlobalStateContext } from "../lib/provider/GlobalState";
 
-var ingredientCount: number = 0;
+import { Ingredient } from "../model/templates";
+import { useRecipe } from "../lib/hooks/useRecipe";
 
-interface Ing {
-    id: number;
-    value: string;
-    quantity: string;
-    unit: string;
-}
+var ingredientCount: number = 0;
 
 export default function AddRecipe() {
     const navigation = useNavigation();
-    const [recipeName, setRecipeName] = useState<string>();
-    const [ingredients, setIngredients] = useState<Array<Ing>>([]);
-    const [instructions, setInstructions] = useState<string>();
-
+    const params = useLocalSearchParams();
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
-    function addIngredient() {
-        setIngredients((prevIngredients) => [
+    const { recipeName, ingredients, instructions } = useRecipe(
+        params,
+        recipeList
+    );
+
+    const [localRecipeName, setLocalRecipeName] = useState<string>(recipeName);
+    const [localIngredients, setLocalIngredients] =
+        useState<Array<Ingredient>>(ingredients);
+    const [localInstructions, setLocalInstructions] =
+        useState<string>(instructions);
+
+    useEffect(() => {
+        if (params.recipeID) {
+            const recipe = recipeList.find(
+                (r: any) => r.ID == Number(params.recipeID)
+            );
+            if (recipe) {
+                setLocalRecipeName(recipe.title);
+                const ingredientsArray = recipe.ingredient
+                    .split(" | ")
+                    .map((ingredient: string, index: number) => {
+                        const [value, quantityUnit] = ingredient.split(" , ");
+                        const [quantity, unit] = quantityUnit.split(" ");
+                        return { id: index, value, quantity, unit };
+                    });
+                setLocalIngredients(ingredientsArray);
+                setLocalInstructions(recipe.instructions);
+            }
+        }
+    }, [params.recipeID, recipeList]);
+
+    function addIngredient(
+        _value: string = "",
+        _quantity: string = "",
+        _unit: string = "g"
+    ) {
+        setLocalIngredients((prevIngredients) => [
             ...prevIngredients,
-            { id: ingredientCount, value: "", quantity: "", unit: "g" },
+            {
+                id: ingredientCount,
+                value: _value,
+                quantity: _quantity,
+                unit: _unit,
+            },
         ]);
         ++ingredientCount;
     }
@@ -49,7 +82,7 @@ export default function AddRecipe() {
         _quantity: string,
         _unit: string
     ) {
-        setIngredients((prevIngredients) =>
+        setLocalIngredients((prevIngredients) =>
             prevIngredients.map((ingredient) =>
                 ingredient.id === id
                     ? {
@@ -65,20 +98,24 @@ export default function AddRecipe() {
     function save() {
         var ingJsonString: string = " ";
 
-        var recipeModel = SQliter.Model("Recipes", recipeSchema);
-        for (var i: number = 0; i < ingredients.length; i++) {
+        // var recipeModel = SQliter.Model("Recipes", recipeSchema);
+        var recipeModel = SQliter.Model(recipeSchema);
+        for (var i: number = 0; i < localIngredients.length; i++) {
             //  ingJsonString += ingredients[i].value +" , " +  + " | ";
-            ingJsonString += `${ingredients[i].value.trim()} , ${ingredients[
+            ingJsonString += `${localIngredients[
                 i
-            ].quantity.trim()} ${ingredients[i].unit.trim()} | `;
+            ].value.trim()} , ${localIngredients[
+                i
+            ].quantity.trim()} ${localIngredients[i].unit.trim()} | `;
         }
-
-        if (recipeName != "" || recipeName != null) {
-            recipeModel.title = recipeName;
-            recipeModel.ingredient = ingJsonString
-                .trim()
-                .substring(0, ingJsonString.length);
-            recipeModel.instructions = instructions ?? " ";
+        if (ingJsonString.endsWith(" | ")) {
+            ingJsonString = ingJsonString.slice(0, -3);
+        }
+        if (localRecipeName != "" || localRecipeName != null) {
+            recipeModel.title = localRecipeName;
+            recipeModel.ingredient = ingJsonString.trim();
+            // .substring(0, ingJsonString.length);
+            recipeModel.instructions = localInstructions ?? " ";
 
             recipeModel = recipeModel.insert();
 
@@ -101,15 +138,14 @@ export default function AddRecipe() {
                     <Entypo name="save" size={44} />
                 </Pressable>
             </View>
-            <View style={styles.urlContainer}>
-                <TextInput
-                    style={styles.urlInput}
-                    placeholder="URL"
-                ></TextInput>
-                <Pressable style={styles.urlButton}>
-                    <Text style={styles.urlText}>Los</Text>
-                </Pressable>
-            </View>
+            {params.recipeID === undefined && (
+                <View style={styles.urlContainer}>
+                    <TextInput style={styles.urlInput} placeholder="URL" />
+                    <Pressable style={styles.urlButton}>
+                        <Text style={styles.urlText}>Los</Text>
+                    </Pressable>
+                </View>
+            )}
             <ScrollView>
                 <View style={styles.contentContainer}>
                     <Text>RezeptName</Text>
@@ -117,12 +153,13 @@ export default function AddRecipe() {
                         key={"recipeName"}
                         style={styles.ingInput}
                         placeholder="Rezeptname"
-                        onChangeText={setRecipeName}
+                        value={localRecipeName}
+                        onChangeText={setLocalRecipeName}
                     ></TextInput>
                 </View>
                 <View style={styles.contentContainer}>
                     <Text>Zutaten</Text>
-                    {ingredients.map((ingredient) => (
+                    {localIngredients.map((ingredient) => (
                         <View key={ingredient.id}>
                             <View style={styles.horiContainer}>
                                 <TextInput
@@ -190,7 +227,7 @@ export default function AddRecipe() {
                             </View>
                         </View>
                     ))}
-                    <Pressable onPress={addIngredient}>
+                    <Pressable onPress={() => addIngredient()}>
                         <View style={styles.horiContainer}>
                             <Entypo name="plus" size={34} style={styles.icon} />
                             <Text style={styles.txtAdd}> add </Text>
@@ -203,7 +240,8 @@ export default function AddRecipe() {
                     <TextInput
                         multiline={true}
                         style={styles.instInput}
-                        onChangeText={setInstructions}
+                        value={localInstructions}
+                        onChangeText={setLocalInstructions}
                     ></TextInput>
                 </View>
             </ScrollView>
