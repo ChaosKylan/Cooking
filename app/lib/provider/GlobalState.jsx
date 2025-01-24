@@ -5,7 +5,7 @@ import { recipeSchema } from "../../model/recipeModel";
 export const GlobalStateContext = createContext();
 
 export const GlobalStateProvider = ({ children }) => {
-    var db = new SQliter();
+    var db = SQliter.connection();
     const [recipeList, setRecipeList] = useState([]);
 
     useEffect(() => {

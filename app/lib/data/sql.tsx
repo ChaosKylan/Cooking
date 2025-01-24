@@ -1,5 +1,12 @@
 import * as SQLite from "expo-sqlite";
-import Schema from "../../lib/data/schema";
+import Schema from "./schema/schema";
+import ColumnSchema from "./schema/columnSchema";
+import UpgradeTableSchemaHandler from "./handler/upgradeTable";
+import dbVersionSchema from "./models/dbVersion";
+
+const packageJson = require("../../../package.json");
+const projectName = packageJson.name;
+const dbName = `${projectName}.db`;
 
 class SQliter {
     /*
@@ -9,7 +16,8 @@ class SQliter {
     static #instance: SQliter;
     db: SQLite.SQLiteDatabase;
 
-    public static connection(_dbName = "cooking.db"): SQliter {
+    //public static connection(_dbName = "cooking.db"): SQliter {
+    public static connection(_dbName = dbName): SQliter {
         if (!SQliter.#instance) {
             SQliter.#instance = new SQliter();
         }
@@ -17,33 +25,73 @@ class SQliter {
         return SQliter.#instance;
     }
 
-    constructor(_dbName = "cooking.db") {
+    // constructor(_dbName: string = "cooking.db") {
+    constructor(_dbName: string = dbName) {
         this.db = SQLite.openDatabaseSync(_dbName);
+        this.createTable(dbVersionSchema);
     }
     /*
         Create SqLite Table from Schema
     */
-    createTable(_schema: Schema, name: string) {
-        let pks = " PRIMARY KEY (";
+    createTable(_schema: Schema) {
+        let pks: string = " PRIMARY KEY (";
+        var name: string = _schema.tableName;
+        var hasPk: boolean = false;
+
         //const objKey = Object.keys(_schema.columns)[0];
         let query = `CREATE TABLE IF NOT EXISTS ${name} (`;
         Object.keys(_schema.columns).forEach((key) => {
             const schemaDetails = _schema.columns[key];
             query += `"${key}" ${this.getDataType(schemaDetails.type)} `;
-
             if (schemaDetails.NotNull == true) {
                 query += `NOT NULL `;
             }
             if (schemaDetails.PK == true) {
+                hasPk = true;
                 pks += key + ",";
             }
 
             query += ` ,`;
         });
-        pks = pks.substring(0, pks.length - 1);
-        query += pks + "))";
+
+        if (hasPk) {
+            pks = pks.substring(0, pks.length - 1);
+            query += pks + "))";
+        } else {
+            query = query.slice(0, -1);
+            query += ")";
+        }
+        //console.log(query);
         //this.executeSqlWihtout("DROP TABLE IF EXISTS " + name);
         this.executeSqlWihtout(query);
+    }
+
+    async upgradeTable(
+        oldSchema: Schema,
+        newColumns: { [key: string]: ColumnSchema }
+    ) {
+        const tempTableName = `${oldSchema.tableName}_temp`;
+
+        // Erstellen der neuen Tabelle mit dem neuen Schema
+        const updatedSchema: Schema = {
+            tableName: tempTableName,
+            columns: { ...oldSchema.columns, ...newColumns },
+        };
+        this.createTable(updatedSchema);
+
+        // Kopieren der Daten aus der alten Tabelle in die neue Tabelle
+        const oldColumns = Object.keys(oldSchema.columns).join(", ");
+        const newColumnsNames = Object.keys(newColumns).join(", ");
+        const copyDataQuery = `INSERT INTO ${tempTableName} (${oldColumns}, ${newColumnsNames}) SELECT ${oldColumns}, ${newColumnsNames} FROM ${oldSchema.tableName}`;
+        await this.executeSqlWihtout(copyDataQuery);
+
+        // Löschen der alten Tabelle
+        const dropOldTableQuery = `DROP TABLE ${oldSchema.tableName}`;
+        await this.executeSqlWihtout(dropOldTableQuery);
+
+        // Umbenennen der neuen Tabelle in den alten Tabellennamen
+        const renameTableQuery = `ALTER TABLE ${tempTableName} RENAME TO ${oldSchema.tableName}`;
+        await this.executeSqlWihtout(renameTableQuery);
     }
 
     getDataType(type: "string" | "number" | "boolean"): any {
@@ -58,9 +106,10 @@ class SQliter {
                 return "TEXT";
         }
     }
+
     async executeSqlWihtout(sql: string, params = []) {
         try {
-            //   console.log(sql);
+            // console.log(sql);
             const result = await this.db.runSync(sql);
             return result;
         } catch (e) {
@@ -69,10 +118,46 @@ class SQliter {
     }
 
     async executeSqlWithReturn(sql: string) {
-        console.log(sql + " Test");
         const rows = this.db.getAllSync(sql);
         // console.log("SELECT: " + rows);
         return rows;
+    }
+
+    // Methode zum Abrufen des Tabellenschemas
+    getTableSchema(tableName: string): Schema {
+        try {
+            const schemaInfo = this.db.getAllSync(
+                `PRAGMA table_info(${tableName})`
+            );
+            const columns: { [key: string]: ColumnSchema } = {};
+            schemaInfo.forEach((column: any) => {
+                columns[column.name] = {
+                    type: this.getColumnTypeFromSQLiteType(column.type),
+                    PK: column.pk === 1,
+                    NotNull: column.notnull === 1,
+                };
+            });
+            return {
+                tableName,
+                columns,
+            };
+        } catch (e) {
+            console.log(e);
+            throw new Error(`Failed to get schema for table ${tableName}`);
+        }
+    }
+
+    getColumnTypeFromSQLiteType(type: string): "string" | "number" | "boolean" {
+        switch (type.toUpperCase()) {
+            case "TEXT":
+                return "string";
+            case "INTEGER":
+                return "number";
+            case "BOOLEAN":
+                return "boolean";
+            default:
+                throw new Error("Unsupported column type");
+        }
     }
 
     findOne(name: string, schema: Schema, where: string = "") {
@@ -123,6 +208,17 @@ class SQliter {
             console.log(e);
         }
     }
+
+    getCurrentDbVersion() {
+        try {
+            var data = this.findOne(dbVersionSchema.tableName, dbVersionSchema);
+            return data?.Version || 0;
+        } catch (e) {
+            console.log(e);
+            return 0;
+        }
+    }
+
     // Funktion zum Schließen der Datenbankverbindung
     closeDatabase() {
         if (this.db) {
@@ -131,8 +227,19 @@ class SQliter {
     }
 
     public static Model(schema: Schema, data: { [key: string]: any } = {}) {
-        var sqlite = new SQliter();
+        var sqlite = SQliter.connection();
         return sqlite.generateModelFromSchema(schema, data);
+    }
+
+    public static UpgradeDB(schema: UpgradeTableSchema) {
+        try {
+            var handler = new UpgradeTableSchemaHandler();
+            var sqlite = SQliter.connection();
+            var version = sqlite.getCurrentDbVersion();
+            handler.upgradeDatabase(schema, version);
+        } catch (error) {
+            console.error("Error during database upgrade:", error);
+        }
     }
 
     generateModelFromSchema(
@@ -149,7 +256,7 @@ class SQliter {
             constructor(data: { [key: string]: any }) {
                 this.schema = _schema;
                 this.name = _schema.tableName;
-                this.sqliter = new SQliter();
+                this.sqliter = SQliter.connection();
                 Object.keys(this.schema.columns).forEach((key) => {
                     const schemaDetails = this.schema.columns[key];
                     if (data[key] !== undefined) {
@@ -158,8 +265,8 @@ class SQliter {
                         this[key] = this.getDefault(schemaDetails.type);
                     }
                 });
-                this.sqliter = new SQliter();
-                this.sqliter.createTable(this.schema, this.name);
+                // this.sqliter = SQliter.connection();
+                // this.sqliter.createTable(this.schema, this.name);
             }
             getDefault(type: "string" | "number" | "boolean"): any {
                 switch (type) {
@@ -241,13 +348,32 @@ class SQliter {
                     var relationID = relationResult
                         ? relationResult.map((r) => r.ingredientID)
                         : [];
+                    var targetResult: Array<any>[] = [];
+                    relationID.forEach((id) => {
+                        const result =
+                            this.sqliter.findAll(
+                                targetScheme.tableName,
+                                targetScheme,
+                                `${targetScheme.columns.ID} == ${id}`
+                            ) || [];
+                        targetResult.push(result);
+                    });
+                    var manyResult = {
+                        relation: relationResult,
+                        target: targetResult,
+                    };
+                    return manyResult;
                 } else {
                     var relation = this.sqliter.findAll(
                         targetScheme.tableName,
                         targetScheme,
                         `${targetScheme.columns.ID} == ${this.ID}`
                     );
-                    return relation;
+                    var result = {
+                        relation: relationResult,
+                        target: "",
+                    };
+                    return result;
                 }
             }
         }

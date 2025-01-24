@@ -1,4 +1,4 @@
-import Schema from "../lib/data/schema";
+import Schema from "../lib/data/schema/schema";
 
 export const recipeSchema: Schema = {
     tableName: "Recipes",

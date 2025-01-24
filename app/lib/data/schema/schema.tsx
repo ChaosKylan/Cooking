@@ -1,8 +1,4 @@
-interface ColumnSchema {
-    type: "string" | "number" | "boolean";
-    PK?: boolean;
-    NotNull?: boolean;
-}
+import ColumnSchema from "./columnSchema";
 
 interface Schema {
     tableName: string;

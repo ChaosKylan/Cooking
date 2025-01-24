@@ -31,9 +31,13 @@ export default function Tab() {
     //     setRecipeList((recipeModelList: any) => [...recipeModelList, model]);
     //  }
 
-    // var db = new SQliter();
+    var db = SQliter.connection();
 
     // db.executeSqlWihtout("DELETE FROM Recipes");
+    // db.executeSqlWithReturn("Select * FROM Ingredients");
+    //console.log(db.executeSqlWithReturn("Select * from Ingredients"));
+
+    //db.getTableSchema("Ingredients");
 
     const router = useRouter();
     function searchCheck(model: Recipe) {
