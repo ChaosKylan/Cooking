@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ingredient } from "../../model/templates";
+import { recIngMapper } from "@/app/helper/recIngMapper";
 
 export const useRecipe = (params: any, recipeList: any) => {
     const [recipeName, setRecipeName] = useState<string>("");
@@ -13,7 +14,9 @@ export const useRecipe = (params: any, recipeList: any) => {
             );
             if (recipe) {
                 setRecipeName(recipe.title);
-                const ingredientsArray = recipe.ingredient
+                //const ingredientsArray = recipe.ingredient
+                const ingString = recIngMapper(recipe.ID, recipeList);
+                const ingredientsArray = ingString
                     .split(" | ")
                     .map((ingredient: string, index: number) => {
                         const [value, quantityUnit] = ingredient.split(" , ");

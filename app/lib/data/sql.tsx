@@ -61,7 +61,7 @@ class SQliter {
             query = query.slice(0, -1);
             query += ")";
         }
-        //console.log(query);
+        // console.log(query);
         //this.executeSqlWihtout("DROP TABLE IF EXISTS " + name);
         this.executeSqlWihtout(query);
     }
@@ -160,14 +160,14 @@ class SQliter {
         }
     }
 
-    findOne(name: string, schema: Schema, where: string = "") {
+    findOne(schema: Schema, where: string = "") {
         try {
             var row: any = "";
-            if (where != "") {
-                row = this.db.getAllSync(`SELECT * FROM ${name}`);
+            if (where == "") {
+                row = this.db.getAllSync(`SELECT * FROM ${schema.tableName}`);
             } else {
                 row = this.db.getAllSync(
-                    `SELECT * FROM ${name} WHERE ${where}`
+                    `SELECT * FROM ${schema.tableName} WHERE ${where}`
                 );
             }
             var model = this.generateModelFromSchema(schema, row[0]);
@@ -177,20 +177,21 @@ class SQliter {
         }
     }
 
-    findAll(name: string, schema: Schema, where: string = "") {
+    findAll(schema: Schema, where: string = "") {
         try {
             var modelList = [];
-            var query = `SELECT * FROM ${name} `;
+            var query = `SELECT * FROM ${schema.tableName} `;
             if (where != "") {
                 query += `WHERE ${where}`;
             }
+            // var test = this.executeSqlWithReturn("Select * from RecipIngRel");
+            // console.log(query);
             const row: any = this.db.getAllSync(query);
 
             for (var i = 0; i < row.length; i++) {
                 var model = this.generateModelFromSchema(schema, row[i]);
                 modelList.push(model);
             }
-
             return modelList;
         } catch (e) {
             console.log(e);
@@ -199,9 +200,11 @@ class SQliter {
 
     getRelation(name: string, schema: Schema, relation: string) {}
 
-    getMaxID(name: string, schema: Schema) {
+    getMaxID(schema: Schema) {
         try {
-            var data = this.db.getAllSync(`SELECT MAX(ID) as ID FROM ${name}`);
+            var data = this.db.getAllSync(
+                `SELECT MAX(ID) as ID FROM ${schema.tableName}`
+            );
             console.log(data);
             return data;
         } catch (e) {
@@ -211,7 +214,7 @@ class SQliter {
 
     getCurrentDbVersion() {
         try {
-            var data = this.findOne(dbVersionSchema.tableName, dbVersionSchema);
+            var data = this.findOne(dbVersionSchema);
             return data?.Version || 0;
         } catch (e) {
             console.log(e);
@@ -286,14 +289,11 @@ class SQliter {
                 var queryPartThree = `)`;
                 var newID = 0;
 
-                Object.keys(this.schema).forEach((key) => {
+                Object.keys(this.schema.columns).forEach((key) => {
                     //const schemaDetails = this.schema.columns[key];
                     queryPartOne += `${key} ,`;
                     if (key == "ID") {
-                        var models = this.sqliter.findAll(
-                            this.name,
-                            this.schema
-                        );
+                        var models = this.sqliter.findAll(this.schema);
                         var row = models?.length;
                         row = row ?? 0;
                         if (row != null || row != "") {
@@ -309,7 +309,7 @@ class SQliter {
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                //console.log(queryPartOne + queryPartTwo + queryPartThree);
+                //   console.log(queryPartOne + queryPartTwo + queryPartThree);
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );
@@ -319,7 +319,7 @@ class SQliter {
             update() {
                 var queryPartOne = `UPDATE ${this.name} SET `;
                 var queryPartTwo = `WHERE `;
-                Object.keys(this.schema).forEach((key) => {
+                Object.keys(this.schema.columns).forEach((key) => {
                     if (key == "ID") {
                         queryPartTwo += `ID == ${this[key]}`;
                     }
@@ -328,52 +328,77 @@ class SQliter {
                 queryPartOne = queryPartOne.slice(0, -1);
                 this.sqliter.executeSqlWihtout(queryPartOne + queryPartTwo);
             }
-            delete() {
+            /**
+             ** Default via ID
+             ** optional custom where
+             */
+            delete(where: string = "") {
                 var query = `DELETE FROM ${this.name} WHERE `;
-                Object.keys(this.schema).forEach((key) => {
-                    if (key == "ID") {
-                        query += `ID == ${this[key]}`;
-                    }
-                });
+                if (where == "") {
+                    Object.keys(this.schema.columns).forEach((key) => {
+                        if (key == "ID") {
+                            query += `ID == ${this[key]}`;
+                        }
+                    });
+                } else {
+                    query += where;
+                }
                 this.sqliter.executeSqlWihtout(query);
             }
+            /**
+             * Returns all Mapped Data
+             ** Actuly only one Target Table is Joinable
+             * @param targetScheme Target Table
+             * @param relationSchema Mapping Table
+             * @returns An Object with to Object Arrays inside. One Object with Target Schema and one wich relationSchema
+             */
             join(targetScheme: Schema, relationSchema?: Schema) {
-                if (relationSchema) {
-                    var relationResult = this.sqliter.findAll(
-                        relationSchema.tableName,
-                        relationSchema,
-                        `${relationSchema.columns.recipeID} == ${this.ID}`
-                    );
+                try {
+                    if (relationSchema) {
+                        var relationResult = this.sqliter.findAll(
+                            relationSchema,
+                            `${this.name.toLocaleLowerCase()}ID == ${
+                                this["ID"]
+                            }`
+                        );
 
-                    var relationID = relationResult
-                        ? relationResult.map((r) => r.ingredientID)
-                        : [];
-                    var targetResult: Array<any>[] = [];
-                    relationID.forEach((id) => {
-                        const result =
-                            this.sqliter.findAll(
-                                targetScheme.tableName,
+                        var relationID = relationResult
+                            ? relationResult.map(
+                                  (r) =>
+                                      r[
+                                          `${targetScheme.tableName.toLocaleLowerCase()}ID`
+                                      ]
+                              )
+                            : [];
+                        var targetResult: DynamicModel[] = [];
+                        relationID.forEach((id) => {
+                            const result = this.sqliter.findOne(
                                 targetScheme,
-                                `${targetScheme.columns.ID} == ${id}`
-                            ) || [];
-                        targetResult.push(result);
-                    });
-                    var manyResult = {
-                        relation: relationResult,
-                        target: targetResult,
-                    };
-                    return manyResult;
-                } else {
-                    var relation = this.sqliter.findAll(
-                        targetScheme.tableName,
-                        targetScheme,
-                        `${targetScheme.columns.ID} == ${this.ID}`
-                    );
-                    var result = {
-                        relation: relationResult,
-                        target: "",
-                    };
-                    return result;
+                                `ID == ${id}`
+                            );
+                            if (result) {
+                                targetResult.push(result);
+                            }
+                        });
+                        var manyResult = {
+                            relation: relationResult,
+                            target: targetResult,
+                        };
+                        return manyResult;
+                    } else {
+                        var relation = this.sqliter.findAll(
+                            targetScheme,
+                            `${targetScheme.columns.ID} == ${this.ID}`
+                        );
+                        var result = {
+                            relation: relationResult,
+                            target: "",
+                        };
+                        return result;
+                    }
+                } catch (error) {
+                    console.error("Error during join operation:", error);
+                    return null;
                 }
             }
         }

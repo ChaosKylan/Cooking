@@ -16,8 +16,16 @@ import { useState, useContext, useRef } from "react";
 import { useRouter } from "expo-router";
 import { GlobalStateContext } from "../lib/provider/GlobalState";
 import SQliter from "../lib/data/sql";
-import { recipeSchema } from "../model/recipeModel";
-import { Recipe, Layout } from "../model/templates";
+import { recipeSchema } from "../model/schema/recipe";
+import {
+    Recipe,
+    Layout,
+    RecipeIngredientRel,
+    IngredientNew,
+} from "../model/templates";
+import ingredientSchema from "../model/schema/ingredient";
+import recipIngSchema from "../model/schema/recipeIngredientRel";
+import { recIngMapper } from "../helper/recIngMapper";
 
 export default function Tab() {
     var [searchText, setSearchText] = useState("");
@@ -26,18 +34,6 @@ export default function Tab() {
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
     const recipeRefs = useRef<{ [key: number]: LayoutRectangle }>({});
-
-    // function addRecipeModel(model: any) {
-    //     setRecipeList((recipeModelList: any) => [...recipeModelList, model]);
-    //  }
-
-    var db = SQliter.connection();
-
-    // db.executeSqlWihtout("DELETE FROM Recipes");
-    // db.executeSqlWithReturn("Select * FROM Ingredients");
-    //console.log(db.executeSqlWithReturn("Select * from Ingredients"));
-
-    //db.getTableSchema("Ingredients");
 
     const router = useRouter();
     function searchCheck(model: Recipe) {
@@ -73,13 +69,37 @@ export default function Tab() {
                 )
             );
 
-            //var recipeModel = SQliter.Model(Recipes ,recipeSchema);
             var recipeModel = SQliter.Model(recipeSchema);
             recipeModel.ID = selectedRecipe.ID;
             recipeModel.delete();
         }
         setModalVisible(false);
     };
+
+    // const mapDataToString = (recipeID: number) => {
+    //     var recipeModel: any | undefined = recipeList.find(
+    //         (recipe: any) => recipe.ID === recipeID
+    //     );
+    //     var data = recipeModel.join(ingredientSchema, recipIngSchema);
+    //     interface Data {
+    //         relation: RecipeIngredientRel[];
+    //         target: IngredientNew[];
+    //     }
+
+    //     return data.relation
+    //         .map((relationItem: RecipeIngredientRel) => {
+    //             const targetItem: IngredientNew | undefined = data.target.find(
+    //                 (target: IngredientNew) =>
+    //                     target.ID === relationItem.ingredientsID
+    //             );
+    //             if (targetItem) {
+    //                 return `${targetItem.ingName}, ${relationItem.quantity} ${relationItem.unit} |`;
+    //             }
+    //             return null;
+    //         })
+    //         .filter((item: string | null): item is string => item !== null)
+    //         .join(" ");
+    // };
 
     //screens/addRecipe
     return (
@@ -200,10 +220,14 @@ export default function Tab() {
                                         </Text>
                                         <Text style={styles.cardText}>
                                             {
-                                                //model.ingredient.substring(0, 50)
-                                                cleanUpStringForView(
-                                                    model.ingredient
-                                                ).substring(0, 43)
+                                                //mapDataToString(model.ID)
+                                                recIngMapper(
+                                                    model.ID,
+                                                    recipeList
+                                                )
+                                                    .trim()
+                                                    .slice(0, -1)
+                                                    .substring(0, 43)
                                             }
                                         </Text>
                                     </View>
@@ -212,9 +236,10 @@ export default function Tab() {
                                             Anleitung:{" "}
                                         </Text>
                                         <Text style={styles.cardText}>
-                                            {cleanUpStringForView(
-                                                model.instructions
-                                            ).substring(0, 100)}
+                                            {model.instructions.substring(
+                                                0,
+                                                50
+                                            )}
                                         </Text>
                                     </View>
                                 </View>

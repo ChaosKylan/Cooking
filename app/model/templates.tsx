@@ -5,11 +5,23 @@ export interface Ingredient {
     unit: string;
 }
 
+export interface IngredientNew {
+    ID: number;
+    ingName: string;
+}
+
 export interface Recipe {
     ID: number;
     title: string;
     ingredient: string;
     instructions: string;
+}
+
+export interface RecipeIngredientRel {
+    recipesID: number;
+    ingredientsID: number;
+    quantity: string;
+    unit: string;
 }
 
 export interface Layout {

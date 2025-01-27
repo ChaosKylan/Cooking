@@ -3,12 +3,10 @@ import { ThemeProvider } from "./lib/provider/themeContext";
 import { StatusBar } from "expo-status-bar";
 import { GlobalStateProvider } from "./lib/provider/GlobalState";
 import { useEffect } from "react";
-import {
-    recipeSchema,
-    ingredientSchema,
-    recipIngSchema,
-} from "./model/recipeModel";
+import { recipeSchema } from "./model/schema/recipe";
+import ingredientSchema from "./model/schema/ingredient";
 import SQliter from "./lib/data/sql";
+import recipIngSchema from "./model/schema/recipeIngredientRel";
 
 export default function Layout() {
     useEffect(() => {
@@ -48,6 +46,9 @@ export default function Layout() {
 function preInitDB() {
     try {
         var sql = SQliter.connection();
+        // sql.executeSqlWihtout("Drop table if exists Recipes");
+        // sql.executeSqlWihtout("Drop table if exists RecipIngRel");
+        // sql.executeSqlWihtout("Drop table if exists Ingredients");
         sql.createTable(recipeSchema);
         sql.createTable(ingredientSchema);
         sql.createTable(recipIngSchema);
