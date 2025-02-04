@@ -6,6 +6,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useRecipe } from "../lib/hooks/useRecipe";
 import { useNavigation } from "expo-router";
 import { Entypo } from "@expo/vector-icons";
+import Header from "../components/header";
 
 export default function ViewRecipe() {
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
@@ -17,7 +18,8 @@ export default function ViewRecipe() {
     );
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
+            <Header headerText={"Recipe"} />
+            {/* <View style={styles.header}>
                 <Pressable
                     onPress={() => navigation.goBack()}
                     style={styles.icon}
@@ -26,7 +28,7 @@ export default function ViewRecipe() {
                 </Pressable>
                 <Text style={styles.headerText}>Recipe</Text>
                 <Text> </Text>
-            </View>
+            </View> */}
             <Text>{recipeName}</Text>
             {ingredients.map((ingredient) => (
                 <Text key={ingredient.id}>

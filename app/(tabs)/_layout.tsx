@@ -9,7 +9,7 @@ export default function TabLayout() {
                 headerShown: false,
             }}
         >
-            <Tabs.Screen
+            {/* <Tabs.Screen
                 name="index"
                 options={{
                     title: "Home",
@@ -17,9 +17,9 @@ export default function TabLayout() {
                         <FontAwesome size={28} name="home" color={color} />
                     ),
                 }}
-            />
+            /> */}
             <Tabs.Screen
-                name="cookingList"
+                name="index"
                 options={{
                     title: "Essenplan",
                     tabBarIcon: ({ color }) => (

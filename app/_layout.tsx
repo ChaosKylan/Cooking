@@ -7,6 +7,8 @@ import { recipeSchema } from "./model/schema/recipe";
 import ingredientSchema from "./model/schema/ingredient";
 import SQliter from "./lib/data/sql";
 import recipIngSchema from "./model/schema/recipeIngredientRel";
+import { mealPlansSchema } from "./model/schema/mealPlan";
+import { mealRecipRelSchema } from "./model/schema/mealPlanRecipeRel";
 
 export default function Layout() {
     useEffect(() => {
@@ -52,6 +54,10 @@ function preInitDB() {
         sql.createTable(recipeSchema);
         sql.createTable(ingredientSchema);
         sql.createTable(recipIngSchema);
+
+        sql.createTable(mealPlansSchema);
+        sql.createTable(mealRecipRelSchema);
+
         console.log("Database initialized successfully");
     } catch (error) {
         console.error("Error initializing database:", error);

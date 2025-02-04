@@ -21,11 +21,14 @@ import {
     Recipe,
     Layout,
     RecipeIngredientRel,
-    IngredientNew,
+    Ingredient,
 } from "../model/templates";
 import ingredientSchema from "../model/schema/ingredient";
 import recipIngSchema from "../model/schema/recipeIngredientRel";
 import { recIngMapper } from "../helper/recIngMapper";
+import Header from "../components/header";
+
+import { CustomModal } from "../components/CustomModal";
 
 export default function Tab() {
     var [searchText, setSearchText] = useState("");
@@ -44,8 +47,8 @@ export default function Tab() {
     const handleLongPress = (recipe: Recipe, layout: Layout) => {
         setSelectedRecipe(recipe);
         setModalPosition({
-            top: layout.y - layout.height - 100,
-            left: layout.x + 70,
+            top: layout.y - layout.height - 105,
+            left: layout.x + 120,
         });
 
         setModalVisible(true);
@@ -72,50 +75,36 @@ export default function Tab() {
             var recipeModel = SQliter.Model(recipeSchema);
             recipeModel.ID = selectedRecipe.ID;
             recipeModel.delete();
+            var recipeIngModel = SQliter.Model(recipIngSchema);
+            recipeIngModel.delete(
+                `${recipeSchema.tableName.toLocaleLowerCase()}ID = ${
+                    selectedRecipe.ID
+                }`
+            );
         }
         setModalVisible(false);
     };
 
-    // const mapDataToString = (recipeID: number) => {
-    //     var recipeModel: any | undefined = recipeList.find(
-    //         (recipe: any) => recipe.ID === recipeID
-    //     );
-    //     var data = recipeModel.join(ingredientSchema, recipIngSchema);
-    //     interface Data {
-    //         relation: RecipeIngredientRel[];
-    //         target: IngredientNew[];
-    //     }
-
-    //     return data.relation
-    //         .map((relationItem: RecipeIngredientRel) => {
-    //             const targetItem: IngredientNew | undefined = data.target.find(
-    //                 (target: IngredientNew) =>
-    //                     target.ID === relationItem.ingredientsID
-    //             );
-    //             if (targetItem) {
-    //                 return `${targetItem.ingName}, ${relationItem.quantity} ${relationItem.unit} |`;
-    //             }
-    //             return null;
-    //         })
-    //         .filter((item: string | null): item is string => item !== null)
-    //         .join(" ");
-    // };
+    const handleNew = () => {
+        router.push({
+            pathname: `screens/addRecipe`,
+            //params: { recipeID: 1 },
+        });
+    };
 
     //screens/addRecipe
     return (
         <View style={styles.container}>
             <View style={styles.topBox}>
                 {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
-                <Pressable
+                <Header backArrow={false} addIcon={true} onAdd={handleNew} />
+                {/* <Pressable
                     onPress={() => {
-                        router.push({
-                            pathname: `screens/addRecipe`,
-                            //params: { recipeID: 1 },
-                        });
+                        handleNew();
                     }}
                 >
                     <Entypo name="plus" size={34} style={styles.icon} />
-                </Pressable>
+                </Pressable> */}
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Suchen"
@@ -151,7 +140,7 @@ export default function Tab() {
                                         event.nativeEvent.layout;
                                 }}
                             >
-                                <Modal
+                                {/* <Modal
                                     animationType="none"
                                     transparent={true}
                                     visible={modalVisible}
@@ -209,7 +198,8 @@ export default function Tab() {
                                             </TouchableWithoutFeedback>
                                         </View>
                                     </TouchableWithoutFeedback>
-                                </Modal>
+                                </Modal> */}
+
                                 <View style={styles.card}>
                                     <Text style={styles.cardTitle}>
                                         {model.title}
@@ -247,6 +237,13 @@ export default function Tab() {
                         ))}
                 </ScrollView>
             </TouchableWithoutFeedback>
+            <CustomModal
+                modalVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                modalPosition={modalPosition}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+            />
         </View>
     );
 }

@@ -20,6 +20,7 @@ import { useRecipe } from "../lib/hooks/useRecipe";
 import ingredientSchema from "../model/schema/ingredient";
 import recipIngSchema from "../model/schema/recipeIngredientRel";
 import { recIngMapper } from "../helper/recIngMapper";
+import Header from "../components/header";
 
 export default function AddRecipe() {
     const navigation = useNavigation();
@@ -169,7 +170,11 @@ export default function AddRecipe() {
             );
 
             var recipeIngModel = SQliter.Model(recipIngSchema);
-            recipeIngModel.delete("recipesID = " + recipeModel.ID);
+            recipeIngModel.delete(
+                `${recipeSchema.tableName.toLocaleLowerCase()}ID = ${
+                    recipeModel.ID
+                }`
+            );
 
             saveIngredientData(recipeModel.ID);
             navigation.goBack();
@@ -177,31 +182,13 @@ export default function AddRecipe() {
     }
 
     function save() {
-        !params.recipeID ? addNewRecipe() : updateRecipe();
+        params.recipeID === undefined ? addNewRecipe() : updateRecipe();
     }
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Pressable
-                    onPress={() => navigation.goBack()}
-                    style={styles.icon}
-                >
-                    <Entypo name="arrow-left" size={44} />
-                </Pressable>
-                <Text style={styles.headerText}>Recipe</Text>
-                <Pressable onPress={save}>
-                    <Entypo name="save" size={44} />
-                </Pressable>
-            </View>
-            {params.recipeID === undefined && (
-                <View style={styles.urlContainer}>
-                    <TextInput style={styles.urlInput} placeholder="URL" />
-                    <Pressable style={styles.urlButton}>
-                        <Text style={styles.urlText}>Los</Text>
-                    </Pressable>
-                </View>
-            )}
+            <Header onSave={save} headerText={"Recipe"} saveIcon={true} />
+
             <ScrollView>
                 <View style={styles.contentContainer}>
                     <Text>RezeptName</Text>

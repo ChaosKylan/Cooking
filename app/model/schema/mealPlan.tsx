@@ -1,20 +1,14 @@
 import Schema from "../../lib/data/schema/schema";
 
-export const recipeSchema: Schema = {
-    tableName: "Recipes",
+export const mealPlansSchema: Schema = {
+    tableName: "MealPlans",
     columns: {
         ID: {
             type: "number",
             PK: true,
             NotNull: true,
         },
-        title: {
-            type: "string",
-        },
-        ingredient: {
-            type: "string",
-        },
-        instructions: {
+        name: {
             type: "string",
         },
     },

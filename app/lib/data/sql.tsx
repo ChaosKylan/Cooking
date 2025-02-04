@@ -294,7 +294,10 @@ class SQliter {
                     queryPartOne += `${key} ,`;
                     if (key == "ID") {
                         var models = this.sqliter.findAll(this.schema);
-                        var row = models?.length;
+                        var row = models?.reduce(
+                            (max, model) => (model.ID > max ? model.ID : max),
+                            0
+                        );
                         row = row ?? 0;
                         if (row != null || row != "") {
                             queryPartTwo += `'${row + 1}' ,`;
@@ -309,7 +312,7 @@ class SQliter {
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                //   console.log(queryPartOne + queryPartTwo + queryPartThree);
+                console.log(queryPartOne + queryPartTwo + queryPartThree);
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );
@@ -326,6 +329,7 @@ class SQliter {
                     queryPartOne += `"${key}" = "${this[key]}" ,`;
                 });
                 queryPartOne = queryPartOne.slice(0, -1);
+                console.log(queryPartOne + queryPartTwo);
                 this.sqliter.executeSqlWihtout(queryPartOne + queryPartTwo);
             }
             /**
@@ -334,6 +338,7 @@ class SQliter {
              */
             delete(where: string = "") {
                 var query = `DELETE FROM ${this.name} WHERE `;
+                4;
                 if (where == "") {
                     Object.keys(this.schema.columns).forEach((key) => {
                         if (key == "ID") {
