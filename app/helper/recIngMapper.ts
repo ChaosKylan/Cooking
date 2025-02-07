@@ -2,7 +2,7 @@ import { RecipeIngredientRel, IngredientNew } from "../model/templates";
 import ingredientSchema from "../model/schema/ingredient";
 import recipIngSchema from "../model/schema/recipeIngredientRel";
 
-export const recIngMapper = (recipeID: number, recipeList: any[]): string => {
+const recIngMapper = (recipeID: number, recipeList: any[]): string => {
     const recipeModel: any | undefined = recipeList.find(
         (recipe: any) => recipe.ID === recipeID
     );
@@ -27,3 +27,5 @@ export const recIngMapper = (recipeID: number, recipeList: any[]): string => {
         .filter((item: string | null): item is string => item !== null)
         .join(" ");
 };
+
+export default recIngMapper;

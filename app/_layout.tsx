@@ -25,7 +25,7 @@ export default function Layout() {
                         options={{ headerShown: false }}
                     />
                     <Stack.Screen
-                        name="screens/addRecipe"
+                        name="screens/recipe/addRecipe"
                         options={{
                             headerShown: false,
                             // headerTitle: "Recipe",
@@ -33,7 +33,24 @@ export default function Layout() {
                         }}
                     ></Stack.Screen>
                     <Stack.Screen
-                        name="screens/viewRecipe"
+                        name="screens/recipe/viewRecipe"
+                        options={{
+                            headerShown: false,
+                            // headerTitle: "Recipe",
+                            // headerTitleAlign: "center",
+                        }}
+                    ></Stack.Screen>
+                    <Stack.Screen
+                        name="screens/mealPlan/addMealPlan"
+                        options={{
+                            headerShown: false,
+                            // headerTitle: "Recipe",
+                            // headerTitleAlign: "center",
+                        }}
+                    ></Stack.Screen>
+
+                    <Stack.Screen
+                        name="screens/mealPlan/addMealToPlan"
                         options={{
                             headerShown: false,
                             // headerTitle: "Recipe",
@@ -51,6 +68,8 @@ function preInitDB() {
         // sql.executeSqlWihtout("Drop table if exists Recipes");
         // sql.executeSqlWihtout("Drop table if exists RecipIngRel");
         // sql.executeSqlWihtout("Drop table if exists Ingredients");
+        // sql.executeSqlWihtout("Drop table if exists Ingredients");
+        //sql.executeSqlWihtout("Drop table if exists MealPlans");
         sql.createTable(recipeSchema);
         sql.createTable(ingredientSchema);
         sql.createTable(recipIngSchema);

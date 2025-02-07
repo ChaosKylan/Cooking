@@ -6,21 +6,20 @@ import {
     Pressable,
     TextInput,
 } from "react-native";
-import { Entypo } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import Entypo from "@expo/vector-icons/Entypo";
 import React, { useState, useContext, useEffect } from "react";
 import { Picker } from "@react-native-picker/picker";
-import { useLocalSearchParams } from "expo-router";
-import SQliter from "../lib/data/sql";
-import { recipeSchema } from "../model/schema/recipe";
-import { GlobalStateContext } from "../lib/provider/GlobalState";
+import { useLocalSearchParams, useNavigation } from "expo-router";
+import SQliter from "../../lib/data/sql";
+import { recipeSchema } from "../../model/schema/recipe";
+import { GlobalStateContext } from "../../lib/provider/GlobalState";
 
-import { Ingredient, IngredientNew } from "../model/templates";
-import { useRecipe } from "../lib/hooks/useRecipe";
-import ingredientSchema from "../model/schema/ingredient";
-import recipIngSchema from "../model/schema/recipeIngredientRel";
-import { recIngMapper } from "../helper/recIngMapper";
-import Header from "../components/header";
+import { Ingredient, IngredientNew } from "../../model/templates";
+import { useRecipe } from "../../lib/hooks/useRecipe";
+import ingredientSchema from "../../model/schema/ingredient";
+import recipIngSchema from "../../model/schema/recipeIngredientRel";
+import recIngMapper from "../../helper/recIngMapper";
+import Header from "../../components/header";
 
 export default function AddRecipe() {
     const navigation = useNavigation();
@@ -187,8 +186,9 @@ export default function AddRecipe() {
 
     return (
         <View style={styles.container}>
-            <Header onSave={save} headerText={"Recipe"} saveIcon={true} />
-
+            <View style={styles.topBox}>
+                <Header onSave={save} headerText={"Recipe"} saveIcon={true} />
+            </View>
             <ScrollView>
                 <View style={styles.contentContainer}>
                     <Text>RezeptName</Text>
@@ -327,6 +327,10 @@ const styles = StyleSheet.create({
     VertContainer: {
         flex: 1,
         flexDirection: "column",
+    },
+    topBox: {
+        flexDirection: "column",
+        marginBottom: 30,
     },
     header: {
         flexDirection: "row",

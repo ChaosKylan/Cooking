@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ingredient } from "../../model/templates";
-import { recIngMapper } from "@/app/helper/recIngMapper";
+import recIngMapper from "@/app/helper/recIngMapper";
 
 export const useRecipe = (params: any, recipeList: any) => {
     const [recipeName, setRecipeName] = useState<string>("");

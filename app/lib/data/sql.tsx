@@ -61,7 +61,7 @@ class SQliter {
             query = query.slice(0, -1);
             query += ")";
         }
-        // console.log(query);
+        //console.log(query);
         //this.executeSqlWihtout("DROP TABLE IF EXISTS " + name);
         this.executeSqlWihtout(query);
     }
@@ -113,7 +113,7 @@ class SQliter {
             const result = await this.db.runSync(sql);
             return result;
         } catch (e) {
-            console.log(e);
+            console.log("executeSqlWihtout", e, sql);
         }
     }
 
@@ -142,7 +142,7 @@ class SQliter {
                 columns,
             };
         } catch (e) {
-            console.log(e);
+            console.log("getTableSchema", e, tableName);
             throw new Error(`Failed to get schema for table ${tableName}`);
         }
     }
@@ -173,7 +173,7 @@ class SQliter {
             var model = this.generateModelFromSchema(schema, row[0]);
             return model;
         } catch (e) {
-            console.log(e);
+            console.log("findOne", e);
         }
     }
 
@@ -185,7 +185,7 @@ class SQliter {
                 query += `WHERE ${where}`;
             }
             // var test = this.executeSqlWithReturn("Select * from RecipIngRel");
-            // console.log(query);
+            //console.log(query);
             const row: any = this.db.getAllSync(query);
 
             for (var i = 0; i < row.length; i++) {
@@ -194,7 +194,7 @@ class SQliter {
             }
             return modelList;
         } catch (e) {
-            console.log(e);
+            console.log("findAll", e, schema.tableName);
         }
     }
 
@@ -208,7 +208,7 @@ class SQliter {
             console.log(data);
             return data;
         } catch (e) {
-            console.log(e);
+            console.log("getMaxID", e);
         }
     }
 
@@ -217,7 +217,7 @@ class SQliter {
             var data = this.findOne(dbVersionSchema);
             return data?.Version || 0;
         } catch (e) {
-            console.log(e);
+            console.log("getCurrentDbVersion", e);
             return 0;
         }
     }
@@ -312,7 +312,7 @@ class SQliter {
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                console.log(queryPartOne + queryPartTwo + queryPartThree);
+                // console.log(queryPartOne + queryPartTwo + queryPartThree);
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );

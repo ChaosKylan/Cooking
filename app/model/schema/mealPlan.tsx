@@ -8,7 +8,7 @@ export const mealPlansSchema: Schema = {
             PK: true,
             NotNull: true,
         },
-        name: {
+        planName: {
             type: "string",
         },
     },

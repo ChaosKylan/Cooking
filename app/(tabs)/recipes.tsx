@@ -2,33 +2,23 @@ import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TextInput,
-    Pressable,
     TouchableWithoutFeedback,
     Keyboard,
-    Modal,
-    LayoutRectangle,
+    TouchableOpacity,
+    FlatList,
 } from "react-native";
-import { Entypo } from "@expo/vector-icons";
-import { cleanUpStringForView } from "../lib/cleanUpString";
 import { useState, useContext, useRef } from "react";
 import { useRouter } from "expo-router";
 import { GlobalStateContext } from "../lib/provider/GlobalState";
 import SQliter from "../lib/data/sql";
 import { recipeSchema } from "../model/schema/recipe";
-import {
-    Recipe,
-    Layout,
-    RecipeIngredientRel,
-    Ingredient,
-} from "../model/templates";
-import ingredientSchema from "../model/schema/ingredient";
+import { Recipe } from "../model/templates";
 import recipIngSchema from "../model/schema/recipeIngredientRel";
-import { recIngMapper } from "../helper/recIngMapper";
+import recIngMapper from "../helper/recIngMapper";
 import Header from "../components/header";
-
-import { CustomModal } from "../components/CustomModal";
+import Card from "../components/Card";
+import EditDeleteModal from "../components/EditDeleteModal";
 
 export default function Tab() {
     var [searchText, setSearchText] = useState("");
@@ -36,7 +26,8 @@ export default function Tab() {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-    const recipeRefs = useRef<{ [key: number]: LayoutRectangle }>({});
+
+    const recipeRefs = useRef<{ [key: number]: View }>({});
 
     const router = useRouter();
     function searchCheck(model: Recipe) {
@@ -44,21 +35,24 @@ export default function Tab() {
         return model.title.includes(searchText);
     }
 
-    const handleLongPress = (recipe: Recipe, layout: Layout) => {
+    const handleLongPress = (recipe: Recipe, index: number) => {
         setSelectedRecipe(recipe);
-        setModalPosition({
-            top: layout.y - layout.height - 105,
-            left: layout.x + 120,
-        });
-
-        setModalVisible(true);
+        recipeRefs.current[index].measure(
+            (x, y, width, height, pageX, pageY) => {
+                setModalPosition({
+                    top: pageY,
+                    left: pageX + width,
+                });
+                setModalVisible(true);
+            }
+        );
     };
 
     const handleEdit = () => {
         if (selectedRecipe != null) {
             setModalVisible(false);
             router.push({
-                pathname: `screens/addRecipe`,
+                pathname: `screens/recipe/addRecipe`,
                 params: { recipeID: selectedRecipe.ID },
             });
         }
@@ -87,24 +81,56 @@ export default function Tab() {
 
     const handleNew = () => {
         router.push({
-            pathname: `screens/addRecipe`,
+            pathname: `screens/recipe/addRecipe`,
             //params: { recipeID: 1 },
         });
     };
 
+    const renderItem = ({ item, index }: { item: Recipe; index: number }) => (
+        <TouchableOpacity
+            key={index}
+            onPress={() => {
+                router.push({
+                    pathname: `screens/recipe/viewRecipe`,
+                    params: { recipeID: item.ID },
+                });
+            }}
+            onLongPress={() => handleLongPress(item, index)}
+            ref={(ref) => {
+                if (ref) {
+                    recipeRefs.current[index] = ref;
+                }
+            }}
+        >
+            <Card title={item.title}>
+                <View style={styles.cardInner}>
+                    <Text style={styles.cardSubTitle}>Zutaten:</Text>
+                    <Text style={styles.cardText}>
+                        {
+                            //mapDataToString(model.ID)
+                            recIngMapper(item.ID, recipeList)
+                                .trim()
+                                .slice(0, -1)
+                                .substring(0, 43)
+                        }
+                    </Text>
+                </View>
+                <View style={styles.cardInner}>
+                    <Text style={styles.cardSubTitle}>Anleitung: </Text>
+                    <Text style={styles.cardText}>
+                        {item.instructions.substring(0, 50)}
+                    </Text>
+                </View>
+            </Card>
+        </TouchableOpacity>
+    );
     //screens/addRecipe
     return (
         <View style={styles.container}>
             <View style={styles.topBox}>
                 {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
                 <Header backArrow={false} addIcon={true} onAdd={handleNew} />
-                {/* <Pressable
-                    onPress={() => {
-                        handleNew();
-                    }}
-                >
-                    <Entypo name="plus" size={34} style={styles.icon} />
-                </Pressable> */}
+
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Suchen"
@@ -117,127 +143,17 @@ export default function Tab() {
                 onPress={Keyboard.dismiss}
                 accessible={false}
             >
-                <ScrollView>
-                    {recipeList
-                        .filter((model: Recipe) => searchCheck(model))
-                        .map((model: Recipe, index: number) => (
-                            <Pressable
-                                key={index}
-                                onPress={() => {
-                                    router.push({
-                                        pathname: `screens/viewRecipe`,
-                                        params: { recipeID: model.ID },
-                                    });
-                                }}
-                                onLongPress={(event) =>
-                                    handleLongPress(
-                                        model,
-                                        recipeRefs.current[index]
-                                    )
-                                }
-                                onLayout={(event) => {
-                                    recipeRefs.current[index] =
-                                        event.nativeEvent.layout;
-                                }}
-                            >
-                                {/* <Modal
-                                    animationType="none"
-                                    transparent={true}
-                                    visible={modalVisible}
-                                    onRequestClose={() => {
-                                        setModalVisible(!modalVisible);
-                                    }}
-                                >
-                                    <TouchableWithoutFeedback
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <View style={styles.centeredView}>
-                                            <TouchableWithoutFeedback>
-                                                <View
-                                                    style={[
-                                                        styles.modalView,
-                                                        {
-                                                            top: modalPosition.top,
-                                                            left: modalPosition.left,
-                                                        },
-                                                    ]}
-                                                >
-                                                    <View
-                                                        style={
-                                                            styles.iconContainer
-                                                        }
-                                                    >
-                                                        <Pressable
-                                                            style={
-                                                                styles.iconButton
-                                                            }
-                                                            onPress={handleEdit}
-                                                        >
-                                                            <Entypo
-                                                                name="edit"
-                                                                size={44}
-                                                                color="black"
-                                                            />
-                                                        </Pressable>
-                                                        <Pressable
-                                                            style={
-                                                                styles.iconButton
-                                                            }
-                                                            onPress={
-                                                                handleDelete
-                                                            }
-                                                        >
-                                                            <Entypo
-                                                                name="trash"
-                                                                size={44}
-                                                                color="black"
-                                                            />
-                                                        </Pressable>
-                                                    </View>
-                                                </View>
-                                            </TouchableWithoutFeedback>
-                                        </View>
-                                    </TouchableWithoutFeedback>
-                                </Modal> */}
-
-                                <View style={styles.card}>
-                                    <Text style={styles.cardTitle}>
-                                        {model.title}
-                                    </Text>
-                                    <View style={styles.cardInner}>
-                                        <Text style={styles.cardSubTitle}>
-                                            Zutaten:
-                                        </Text>
-                                        <Text style={styles.cardText}>
-                                            {
-                                                //mapDataToString(model.ID)
-                                                recIngMapper(
-                                                    model.ID,
-                                                    recipeList
-                                                )
-                                                    .trim()
-                                                    .slice(0, -1)
-                                                    .substring(0, 43)
-                                            }
-                                        </Text>
-                                    </View>
-                                    <View style={styles.cardInner}>
-                                        <Text style={styles.cardSubTitle}>
-                                            Anleitung:{" "}
-                                        </Text>
-                                        <Text style={styles.cardText}>
-                                            {model.instructions.substring(
-                                                0,
-                                                50
-                                            )}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </Pressable>
-                        ))}
-                </ScrollView>
+                <FlatList
+                    data={recipeList.filter((model: Recipe) =>
+                        searchCheck(model)
+                    )}
+                    renderItem={renderItem}
+                    keyExtractor={(item: Recipe, index: number) =>
+                        index.toString()
+                    }
+                />
             </TouchableWithoutFeedback>
-            <CustomModal
+            <EditDeleteModal
                 modalVisible={modalVisible}
                 setModalVisible={setModalVisible}
                 modalPosition={modalPosition}

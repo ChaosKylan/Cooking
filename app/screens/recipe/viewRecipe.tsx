@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import React, { useState, useContext, useEffect } from "react";
-import { Ingredient, Recipe } from "../model/templates";
-import { GlobalStateContext } from "../lib/provider/GlobalState";
+import { Ingredient, Recipe } from "../../model/templates";
+import { GlobalStateContext } from "../../lib/provider/GlobalState";
 import { useLocalSearchParams } from "expo-router";
-import { useRecipe } from "../lib/hooks/useRecipe";
+import { useRecipe } from "../../lib/hooks/useRecipe";
 import { useNavigation } from "expo-router";
 import { Entypo } from "@expo/vector-icons";
-import Header from "../components/header";
+import Header from "../../components/header";
 
 export default function ViewRecipe() {
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);

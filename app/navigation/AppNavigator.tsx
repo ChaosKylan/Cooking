@@ -1,7 +1,4 @@
 import { Stack } from "expo-router/stack";
-import Recipes from "../(tabs)/recipes";
-import AddRecipe from "../screens/addRecipe";
-import ViewRecipe from "../screens/viewRecipe";
 
 export default function AppNavigator() {
     return (
@@ -11,11 +8,20 @@ export default function AppNavigator() {
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="screens/addRecipe"
+                name="screens/recipe/addRecipe"
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="screens/viewRecipe"
+                name="screens/recipe/viewRecipe"
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen
+                name="screens/mealPlan/addMealPlan"
+                options={{ headerShown: false }}
+            />
+
+            <Stack.Screen
+                name="screens/mealPlan/addMealToPlan"
                 options={{ headerShown: false }}
             />
         </Stack>

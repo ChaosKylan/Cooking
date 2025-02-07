@@ -5,6 +5,7 @@ import {
     Pressable,
     StyleSheet,
     TouchableWithoutFeedback,
+    Dimensions,
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
 
@@ -16,13 +17,18 @@ interface CustomModalProps {
     handleDelete: () => void;
 }
 
-export const CustomModal: React.FC<CustomModalProps> = ({
+const EditDeleteModal: React.FC<CustomModalProps> = ({
     modalVisible,
     setModalVisible,
     modalPosition,
     handleEdit,
     handleDelete,
 }) => {
+    const screenWidth = Dimensions.get("window").width;
+    const screenHeight = Dimensions.get("window").height;
+
+    const adjustedTop = Math.min(modalPosition.top, screenHeight - 100);
+    const adjustedLeft = Math.min(modalPosition.left, screenWidth - 200);
     return (
         <Modal
             animationType="none"
@@ -39,8 +45,8 @@ export const CustomModal: React.FC<CustomModalProps> = ({
                             style={[
                                 styles.modalView,
                                 {
-                                    top: modalPosition.top,
-                                    left: modalPosition.left,
+                                    top: adjustedTop - 100,
+                                    left: adjustedLeft + 25,
                                 },
                             ]}
                         >
@@ -79,10 +85,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        marginTop: 22,
+        //marginTop: 22,
     },
     modalView: {
-        //position: "absolute",
+        position: "absolute",
         margin: 20,
         backgroundColor: "white",
         borderRadius: 20,
@@ -100,13 +106,15 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "center",
         width: "100%",
         paddingLeft: 5,
     },
     iconButton: {
         flexDirection: "row",
         alignItems: "center",
-        //  marginHorizontal: 10,
+        marginHorizontal: 10,
     },
 });
+
+export default EditDeleteModal;

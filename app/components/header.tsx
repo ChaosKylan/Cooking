@@ -1,13 +1,15 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Entypo } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import Entypo from "@expo/vector-icons/Entypo";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 interface HeaderProps {
     onSave?: () => void;
     onAdd?: () => void;
     onDelete?: () => void;
     onEdit?: () => void;
+    onGoBack?: () => void;
     headerText?: string;
     saveIcon?: boolean;
     addIcon?: boolean;
@@ -21,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({
     onAdd,
     onEdit,
     onDelete,
+    onGoBack,
     headerText,
     saveIcon = false,
     backArrow = true,
@@ -28,15 +31,14 @@ const Header: React.FC<HeaderProps> = ({
     deleteIcon = false,
     editIcon = false,
 }) => {
-    const navigation = useNavigation();
+    const router = useRouter();
 
-    const showPlaceholder = !saveIcon && !addIcon && !deleteIcon && !editIcon;
     return (
         <View style={styles.header}>
             <View style={styles.leftContainer}>
                 {backArrow && (
                     <Pressable
-                        onPress={() => navigation.goBack()}
+                        onPress={onGoBack ?? router.back}
                         style={styles.icon}
                     >
                         <Entypo name="arrow-left" size={44} />
@@ -69,49 +71,13 @@ const Header: React.FC<HeaderProps> = ({
                 )}
             </View>
         </View>
-        // <View style={styles.header}>
-        //     {backArrow ? (
-        //         <Pressable
-        //             onPress={() => navigation.goBack()}
-        //             style={styles.icon}
-        //         >
-        //             <Entypo name="arrow-left" size={44} />
-        //         </Pressable>
-        //     ) : (
-        //         <View style={styles.iconPlaceholder} />
-        //     )}
-        //     <Text style={styles.headerText}>{headerText}</Text>
-
-        //     {editIcon && (
-        //         <Pressable onPress={onSave} style={styles.icon}>
-        //             <Entypo name="edit" size={44} />
-        //         </Pressable>
-        //     )}
-        //     {saveIcon && (
-        //         <Pressable onPress={onSave} style={styles.icon}>
-        //             <Entypo name="save" size={44} />
-        //         </Pressable>
-        //     )}
-
-        //     {deleteIcon && (
-        //         <Pressable onPress={onSave} style={styles.icon}>
-        //             <Entypo name="trash" size={44} />
-        //         </Pressable>
-        //     )}
-        //     {addIcon && (
-        //         <Pressable onPress={onAdd}>
-        //             <Entypo name="plus" size={44} style={styles.icon} />
-        //         </Pressable>
-        //     )}
-        //     {showPlaceholder && <View style={styles.iconPlaceholder} />}
-        // </View>
     );
 };
 const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 16,
+        paddingTop: 16,
     },
     leftContainer: {
         flex: 1,
@@ -133,22 +99,5 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
 });
-// const styles = StyleSheet.create({
-//     header: {
-//         flexDirection: "row",
-//         justifyContent: "space-between",
-//         alignItems: "center",
-//         paddingBottom: 16,
-//     },
-//     icon: {},
-//     iconPlaceholder: {
-//         padding: 8,
-//         width: 44, // Icon size
-//     },
-//     headerText: {
-//         fontSize: 24,
-//         fontWeight: "bold",
-//     },
-// });
 
 export default Header;

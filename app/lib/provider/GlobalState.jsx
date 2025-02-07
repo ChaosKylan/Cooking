@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import SQliter from "../data/sql";
 import { recipeSchema } from "../../model/schema/recipe";
-import { ingredientSchema } from "../../model/schema/ingredient";
+import ingredientSchema from "../../model/schema/ingredient";
 
 export const GlobalStateContext = createContext();
 
@@ -12,11 +12,12 @@ export const GlobalStateProvider = ({ children }) => {
 
     useEffect(() => {
         const recipes = db.findAll(recipeSchema);
+
         setRecipeList(recipes || []);
     }, []);
 
     useEffect(() => {
-        const ingredients = db.findAll("Ingredients", ingredientSchema);
+        const ingredients = db.findAll(ingredientSchema);
         setIngredientList(ingredients || []);
     }, []);
 
