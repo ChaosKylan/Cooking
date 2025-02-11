@@ -34,6 +34,14 @@ export default function AddMealToPlan() {
         model.mealplansID = params.planID;
         model.recipesID = item.ID;
         model.done = false;
+        const maxOrder = Number(
+            SQliter.connection().getMax(
+                mealRecipRelSchema,
+                `orderID`,
+                `mealplansID = ${params.planID}`
+            )
+        );
+        model.orderID = isNaN(maxOrder) ? 0 : maxOrder + 1;
         model.insert();
 
         setAddedItems((prev) => ({ ...prev, [item.ID]: true }));
@@ -76,6 +84,7 @@ export default function AddMealToPlan() {
             </Card>
         </TouchableOpacity>
     );
+
     const searchCheck = (model: Recipe) => {
         if (!searchText || searchText == "") return true;
         return model.title.includes(searchText);
@@ -86,6 +95,7 @@ export default function AddMealToPlan() {
             pathname: "screens/mealPlan/addMealPlan",
             params: {
                 title: params.title.toString(),
+                planID: params.planID,
             },
         });
     };

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Header from "../../components/header";
 import Card from "../../components/Card";
@@ -7,10 +7,17 @@ import Entypo from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Recipe } from "../../model/templates";
 import mealReciMapper from "@/app/helper/mealReciMapper";
+import { GlobalStateContext } from "../../lib/provider/GlobalState";
+import SQliter from "@/app/lib/data/sql";
+import { mealRecipRelSchema } from "@/app/model/schema/mealPlanRecipeRel";
+import { RecipeWithOrder } from "../../model/templates";
 
 export default function AddMealPlan() {
-    const [localRecipeList, setLocalRecipeList] = useState<Recipe[]>([]);
+    const [localRecipeList, setLocalRecipeList] = useState<RecipeWithOrder[]>(
+        []
+    );
     const [isEndReached, setIsEndReached] = useState(false);
+    const { recipeList, setRecipeList } = useContext(GlobalStateContext);
 
     const params = useLocalSearchParams();
     const router = useRouter();
@@ -26,14 +33,120 @@ export default function AddMealPlan() {
         });
     };
 
+    const getRandomRecipe = (excludedIDs: number[]): Recipe | null => {
+        const filteredRecipes: Recipe[] = recipeList.filter(
+            (recipe: Recipe) => !excludedIDs.includes(recipe.ID)
+        );
+        if (filteredRecipes.length > 0) {
+            return filteredRecipes[
+                Math.floor(Math.random() * filteredRecipes.length)
+            ];
+        }
+        return null;
+    };
+
+    const handleRnd = (item: RecipeWithOrder) => {
+        // const filteredRecipes: Recipe[] = recipeList.filter(
+        //     (recipe: Recipe) => recipe.ID !== item.recipe.ID
+        // );
+        // if (filteredRecipes.length > 0) {
+        //     const randomRecipe =
+        //         filteredRecipes[
+        //             Math.floor(Math.random() * filteredRecipes.length)
+        //         ];
+        const randomRecipe = getRandomRecipe([item.recipe.ID]);
+        if (randomRecipe) {
+            var model = SQliter.connection().findOne(
+                mealRecipRelSchema,
+                `mealplansID = ${params.planID} AND recipesID = ${item.recipe.ID} and orderID = ${item.orderID}`
+            );
+
+            if (model) {
+                model.recipesID = randomRecipe.ID;
+                model.update(
+                    `mealplansID = ${params.planID} AND orderID = ${model.orderID}`
+                );
+                //console.log(model);
+                var newRnd: RecipeWithOrder = {
+                    recipe: randomRecipe,
+                    orderID: model.orderID,
+                };
+                setLocalRecipeList((prevList) =>
+                    prevList.map((listItem) =>
+                        listItem.recipe.ID === item.recipe.ID &&
+                        listItem.orderID === item.orderID
+                            ? newRnd
+                            : listItem
+                    )
+                );
+            } else {
+                console.log("handleRnd", "Da ist was schiefgelaufen");
+            }
+        } else {
+            console.log("Keine anderen Rezepte verfügbar");
+        }
+    };
+
+    const handleItemDel = (item: RecipeWithOrder) => {
+        var model = SQliter.Model(mealRecipRelSchema);
+        model?.delete(
+            `mealplansID = ${params.planID} AND recipesID = ${item.recipe.ID} and orderID = ${item.orderID}`
+        );
+        setLocalRecipeList((prevList) =>
+            prevList.filter(
+                (listItem) =>
+                    listItem.recipe.ID !== item.recipe.ID ||
+                    listItem.orderID !== item.orderID
+            )
+        );
+    };
+
     useEffect(() => {
         if (params.planID) {
-            var newRecipes = mealReciMapper(Number(params.planID));
-            setLocalRecipeList((prevList) => [...prevList, ...newRecipes]);
-        }
-    }, [params.title, params.planID]);
+            if (params.autoGen == "true") {
+                const addedRecipeIDs: number[] = [];
+                const recipeCount = Math.max(1, Number(params.recipeCount));
+                for (var i: number = 0; i < recipeCount; i++) {
+                    let randomRecipe = getRandomRecipe(addedRecipeIDs);
+                    if (!randomRecipe && addedRecipeIDs.length > 0) {
+                        // Reset the addedRecipeIDs to allow duplicates
+                        addedRecipeIDs.length = 0;
+                        randomRecipe = getRandomRecipe(addedRecipeIDs);
+                    }
+                    if (randomRecipe) {
+                        addedRecipeIDs.push(randomRecipe.ID);
+                        var model = SQliter.Model(mealRecipRelSchema);
+                        model.mealplansID = params.planID;
+                        model.recipesID = randomRecipe.ID;
+                        model.orderID = i;
+                        model.insert();
 
-    const renderItem = ({ item }: { item: Recipe | null }) => {
+                        var newRecipeWithOrder: RecipeWithOrder = {
+                            recipe: randomRecipe,
+                            orderID: i,
+                        };
+
+                        setLocalRecipeList((prevList) => [
+                            ...prevList,
+                            newRecipeWithOrder,
+                        ]);
+                    }
+                }
+                router.replace({
+                    pathname: "screens/mealPlan/addMealPlan",
+                    params: {
+                        title: params.title.toString(),
+                        planID: params.planID,
+                    },
+                });
+            } else {
+                var newRecipes = mealReciMapper(Number(params.planID));
+                setLocalRecipeList((prevList) => [...prevList, ...newRecipes]);
+            }
+        }
+    }, [params.title, params.planID, params.autoGen]);
+
+    const renderItem = ({ item }: { item: RecipeWithOrder | null }) => {
         if (item === null) {
             return (
                 <View>
@@ -41,15 +154,20 @@ export default function AddMealPlan() {
                 </View>
             );
         }
-
         return (
             <View style={styles.cardContainer}>
                 <Card cardStyle={styles.card}>
                     <View style={styles.horiContainer}>
-                        <Text style={styles.titleText}>{item.title}</Text>
+                        <Text style={styles.titleText}>
+                            {item.recipe.title}
+                        </Text>
                         <View style={styles.iconContainer}>
-                            <Ionicons name="dice" size={22} color="black" />
-                            <Entypo name="cross" size={22} color="black" />
+                            <Pressable onPress={() => handleRnd(item)}>
+                                <Ionicons name="dice" size={33} color="black" />
+                            </Pressable>
+                            <Pressable onPress={() => handleItemDel(item)}>
+                                <Entypo name="cross" size={33} color="black" />
+                            </Pressable>
                         </View>
                     </View>
                 </Card>
@@ -102,7 +220,6 @@ const styles = StyleSheet.create({
     },
     cardContainer: {
         width: "100%",
-        paddingHorizontal: 10,
     },
     card: {
         flex: 1,

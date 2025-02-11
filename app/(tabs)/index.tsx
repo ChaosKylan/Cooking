@@ -1,32 +1,8 @@
-// import { View, Text, StyleSheet } from "react-native";
-// import { ThemeContext } from "../lib/provider/themeContext";
-// import { useContext } from "react";
-// import theme from "../theme/defaultTheme";
-
-// export default function Tab() {
-//     const [theme, setTheme] = useContext(ThemeContext);
-//     return (
-//         <View style={styles.container}>
-//             <Text>Tab [Home]</Text>
-//         </View>
-//     );
-// }
-
-// const styles = StyleSheet.create({
-//     container: {
-//         flex: 1,
-//         justifyContent: "center",
-//         alignItems: "center",
-//         backgroundColor: theme.borderColor,
-//         color: theme.fontColor,
-//     },
-// });
 import {
     View,
     Text,
     StyleSheet,
     TouchableWithoutFeedback,
-    Keyboard,
     FlatList,
     Modal,
     Pressable,
@@ -41,8 +17,10 @@ import { mealRecipRelSchema } from "../model/schema/mealPlanRecipeRel";
 import * as Progress from "react-native-progress";
 import Header from "../components/header";
 import Card from "../components/Card";
-import { Entypo } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import Entypo from "@expo/vector-icons/Entypo";
+import { Menu, Provider } from "react-native-paper";
+import { Colors } from "react-native/Libraries/NewAppScreen";
 
 interface Plan {
     ID: number;
@@ -55,8 +33,13 @@ export default function Tab() {
     const [plan, setPlan] = useState<Array<Plan>>([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [isModalChecked, setIsModalChecked] = useState(false);
-    const [recipeCount, setRecipeCount] = useState("1");
+    const [recipeCount, setRecipeCount] = useState("");
     const [newPlanName, setNewPlanName] = useState("");
+    const [menuVisible, setMenuVisible] = useState<{ [key: number]: boolean }>(
+        {}
+    );
+    const [renameModalVisible, setRenameModalVisible] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
     const router = useRouter();
 
@@ -86,21 +69,66 @@ export default function Tab() {
             }}
         >
             <Card title={item.name}>
-                <Progress.Bar
-                    progress={
-                        item.numberOfRecipe > 0
-                            ? item.recipesDone / item.numberOfRecipe
-                            : 0
-                    }
-                    width={200}
-                    color="#4caf50"
-                />
-                <Text style={styles.progressText}>
-                    {item.recipesDone} /{item.numberOfRecipe} Recipes Done
-                </Text>
+                <View style={styles.horiContainer}>
+                    <Progress.Bar
+                        progress={
+                            item.numberOfRecipe > 0
+                                ? item.recipesDone / item.numberOfRecipe
+                                : 0
+                        }
+                        color="#4caf50"
+                        unfilledColor="yellow"
+                        style={styles.progessBar}
+                    >
+                        <Text style={styles.progressText}>
+                            {item.recipesDone} /{item.numberOfRecipe}
+                        </Text>
+                    </Progress.Bar>
+                    <Menu
+                        visible={menuVisible[item.ID] || false}
+                        onDismiss={() =>
+                            setMenuVisible((prev) => ({
+                                ...prev,
+                                [item.ID]: false,
+                            }))
+                        }
+                        anchor={
+                            <Pressable
+                                onPress={() =>
+                                    setMenuVisible((prev) => ({
+                                        ...prev,
+                                        [item.ID]: true,
+                                    }))
+                                }
+                            >
+                                <Entypo
+                                    name="dots-three-vertical"
+                                    size={24}
+                                    color="black"
+                                />
+                            </Pressable>
+                        }
+                    >
+                        <Menu.Item
+                            onPress={() => handleRename(item)}
+                            title="Umbennen"
+                        />
+                        <Menu.Item
+                            onPress={() => handleDelete(item.ID)}
+                            title="Löschen"
+                        />
+                    </Menu>
+                </View>
             </Card>
         </Pressable>
     );
+
+    const handleRename = (item: Plan) => {
+        setSelectedPlan(item);
+        setNewPlanName(item.name);
+        setRenameModalVisible(true);
+        setMenuVisible((prev) => ({ ...prev, [item.ID]: false }));
+    };
 
     const handelEdit = (_planName: string, _planID: number) => {
         router.push({
@@ -116,109 +144,194 @@ export default function Tab() {
         setModalVisible(true);
     };
 
+    const handleDelete = (planID: number) => {
+        var relModel = SQliter.Model(mealRecipRelSchema);
+        relModel.delete(`${mealPlansSchema.tableName}ID = ${planID}`);
+        var model = SQliter.Model(mealPlansSchema);
+        model.ID = planID;
+        model.delete();
+        setPlan((prev) => prev.filter((plan) => plan.ID !== planID));
+    };
+
     const handelCheckBoxChanged = (newValue: boolean) => {
         setIsModalChecked(newValue);
         if (!newValue) {
             setRecipeCount("1");
         }
     };
-    const handelCreateClick = () => {
-        if (newPlanName != "") {
-            var model = SQliter.Model(mealPlansSchema);
-            model.planName = newPlanName;
-            model.insert();
-            setModalVisible(false);
-            router.push({
-                pathname: `screens/mealPlan/addMealPlan`,
-                params: {
-                    title: newPlanName,
-                    recipeCount: recipeCount,
-                    autoGen: isModalChecked.toString(),
-                },
-            });
 
+    const handelCreateClick = () => {
+        var newName = newPlanName == "" ? "new Plan" : newPlanName;
+
+        var model = SQliter.Model(mealPlansSchema);
+        model.planName = newName;
+        model.insert();
+        setModalVisible(false);
+        router.push({
+            pathname: `screens/mealPlan/addMealPlan`,
+            params: {
+                title: newName,
+                recipeCount: recipeCount,
+                autoGen: isModalChecked.toString(),
+                planID: model.ID,
+            },
+        });
+
+        setNewPlanName("");
+    };
+
+    const handleRenameSubmit = () => {
+        if (selectedPlan && newPlanName !== "") {
+            var model = SQliter.connection().findOne(
+                mealPlansSchema,
+                `ID = ${selectedPlan.ID}`
+            );
+
+            if (!model) return; //ToDo Error Message
+            model.planName = newPlanName;
+            model.update();
+
+            setPlan((prev) =>
+                prev.map((plan) =>
+                    plan.ID === selectedPlan.ID
+                        ? { ...plan, name: newPlanName }
+                        : plan
+                )
+            );
+
+            setRenameModalVisible(false);
             setNewPlanName("");
+            setSelectedPlan(null);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topBox}>
-                <Header
-                    onAdd={handelAdd}
-                    addIcon={true}
-                    backArrow={false}
-                ></Header>
-            </View>
-            <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-                <View>
-                    <FlatList
-                        data={plan}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.ID.toString()}
-                    />
-                    <Modal
-                        animationType="none"
-                        transparent={true}
-                        visible={modalVisible}
-                        onRequestClose={() => {
-                            setModalVisible(false);
-                        }}
-                    >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalView}>
-                                <View style={styles.modalHeader}>
-                                    <Pressable
-                                        style={styles.closeButton}
-                                        onPress={() => setModalVisible(false)}
-                                    >
-                                        <Entypo
-                                            name="cross"
-                                            size={24}
-                                            color="black"
+        <Provider>
+            <View style={styles.container}>
+                <View style={styles.topBox}>
+                    <Header
+                        onAdd={handelAdd}
+                        addIcon={true}
+                        backArrow={false}
+                    ></Header>
+                </View>
+                <TouchableWithoutFeedback
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View>
+                        <FlatList
+                            data={plan}
+                            renderItem={renderItem}
+                            keyExtractor={(item) => item.ID.toString()}
+                        />
+                        <Modal
+                            animationType="none"
+                            transparent={true}
+                            visible={modalVisible}
+                            onRequestClose={() => {
+                                setModalVisible(false);
+                            }}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalView}>
+                                    <View style={styles.modalHeader}>
+                                        <Pressable
+                                            style={styles.closeButton}
+                                            onPress={() =>
+                                                setModalVisible(false)
+                                            }
+                                        >
+                                            <Entypo
+                                                name="cross"
+                                                size={24}
+                                                color="black"
+                                            />
+                                        </Pressable>
+                                    </View>
+                                    <TextInput
+                                        placeholder="Name des Essenplans"
+                                        style={styles.input}
+                                        value={newPlanName}
+                                        onChangeText={setNewPlanName}
+                                    />
+                                    <View style={styles.horiContainer}>
+                                        <Checkbox
+                                            value={isModalChecked}
+                                            onValueChange={
+                                                handelCheckBoxChanged
+                                            }
                                         />
+                                        <Text style={styles.checkBoxText}>
+                                            Automatisch Generieren
+                                        </Text>
+                                    </View>
+                                    {isModalChecked && (
+                                        <View>
+                                            <TextInput
+                                                keyboardType="number-pad"
+                                                placeholder="Anzahl an Essen"
+                                                style={styles.input}
+                                                value={recipeCount}
+                                                onChangeText={setRecipeCount}
+                                            ></TextInput>
+                                        </View>
+                                    )}
+                                    <Pressable
+                                        style={styles.button}
+                                        onPress={handelCreateClick}
+                                    >
+                                        <Text style={styles.buttonText}>
+                                            Erstellen
+                                        </Text>
                                     </Pressable>
                                 </View>
-                                <TextInput
-                                    placeholder="Name des Essenplans"
-                                    style={styles.input}
-                                    value={newPlanName}
-                                    onChangeText={setNewPlanName}
-                                />
-                                <View style={styles.horiContainer}>
-                                    <Checkbox
-                                        value={isModalChecked}
-                                        onValueChange={handelCheckBoxChanged}
-                                    />
-                                    <Text style={styles.checkBoxText}>
-                                        Automatisch Generieren
-                                    </Text>
-                                </View>
-                                {isModalChecked && (
-                                    <View>
-                                        <TextInput
-                                            keyboardType="number-pad"
-                                            placeholder="Anzahl an Essen"
-                                            style={styles.input}
-                                            value={recipeCount}
-                                            onChangeText={setRecipeCount}
-                                        ></TextInput>
-                                    </View>
-                                )}
-                                <Pressable
-                                    style={styles.button}
-                                    onPress={handelCreateClick}
-                                >
-                                    <Text style={styles.buttonText}>
-                                        Erstellen
-                                    </Text>
-                                </Pressable>
                             </View>
-                        </View>
-                    </Modal>
-                </View>
-            </TouchableWithoutFeedback>
-        </View>
+                        </Modal>
+                        <Modal
+                            animationType="none"
+                            transparent={true}
+                            visible={renameModalVisible}
+                            onRequestClose={() => {
+                                setRenameModalVisible(false);
+                            }}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalView}>
+                                    <View style={styles.modalHeader}>
+                                        <Pressable
+                                            style={styles.closeButton}
+                                            onPress={() =>
+                                                setRenameModalVisible(false)
+                                            }
+                                        >
+                                            <Entypo
+                                                name="cross"
+                                                size={24}
+                                                color="black"
+                                            />
+                                        </Pressable>
+                                    </View>
+                                    <TextInput
+                                        placeholder="Neuer Name des Essenplans"
+                                        style={styles.input}
+                                        value={newPlanName}
+                                        onChangeText={setNewPlanName}
+                                    />
+                                    <Pressable
+                                        style={styles.button}
+                                        onPress={handleRenameSubmit}
+                                    >
+                                        <Text style={styles.buttonText}>
+                                            Umbennen
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </Modal>
+                    </View>
+                </TouchableWithoutFeedback>
+            </View>
+        </Provider>
     );
 }
 
@@ -233,7 +346,12 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         marginBottom: 10,
     },
-
+    progessBar: {
+        alignItems: "center",
+        width: "90%",
+        borderRadius: 10,
+        borderColor: "red",
+    },
     topBox: {
         flexDirection: "column",
         marginBottom: 30,
@@ -257,15 +375,15 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     progressText: {
-        marginTop: 8,
         fontSize: 14,
+        marginBottom: 4,
         color: "#555",
     },
     modalOverlay: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)", // Hintergrund transparent machen
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
     },
     modalView: {
         width: "75%",

@@ -212,6 +212,24 @@ class SQliter {
         }
     }
 
+    getMax(schema: Schema, row: string, where?: string) {
+        try {
+            if (where) {
+                var data = this.db.getAllSync(
+                    `SELECT MAX(${row}) as max FROM ${schema.tableName} where ${where}`
+                );
+                return (data[0] as { max: number }).max;
+            } else {
+                var data = this.db.getAllSync(
+                    `SELECT MAX(${row}) as max FROM ${schema.tableName}`
+                );
+                return (data[0] as { max: number }).max;
+            }
+        } catch (e) {
+            console.log("getMax", e);
+        }
+    }
+
     getCurrentDbVersion() {
         try {
             var data = this.findOne(dbVersionSchema);
@@ -312,24 +330,35 @@ class SQliter {
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                // console.log(queryPartOne + queryPartTwo + queryPartThree);
+                // console.log(
+                //     "insert",
+                //     queryPartOne + queryPartTwo + queryPartThree
+                // );
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );
                 this.ID = newID;
                 return this;
             }
-            update() {
+
+            update(where?: string) {
                 var queryPartOne = `UPDATE ${this.name} SET `;
                 var queryPartTwo = `WHERE `;
-                Object.keys(this.schema.columns).forEach((key) => {
-                    if (key == "ID") {
-                        queryPartTwo += `ID == ${this[key]}`;
-                    }
-                    queryPartOne += `"${key}" = "${this[key]}" ,`;
-                });
+                if (where) {
+                    Object.keys(this.schema.columns).forEach((key) => {
+                        queryPartOne += `"${key}" = "${this[key]}" ,`;
+                    });
+                    queryPartTwo += ` ${where}`;
+                } else {
+                    Object.keys(this.schema.columns).forEach((key) => {
+                        if (key == "ID") {
+                            queryPartTwo += `ID == ${this[key]}`;
+                        }
+                        queryPartOne += `"${key}" = "${this[key]}" ,`;
+                    });
+                }
                 queryPartOne = queryPartOne.slice(0, -1);
-                console.log(queryPartOne + queryPartTwo);
+                // console.log(queryPartOne + queryPartTwo);
                 this.sqliter.executeSqlWihtout(queryPartOne + queryPartTwo);
             }
             /**

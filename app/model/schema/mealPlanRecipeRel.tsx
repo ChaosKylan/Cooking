@@ -5,16 +5,18 @@ export const mealRecipRelSchema: Schema = {
     columns: {
         mealplansID: {
             type: "number",
-            PK: true,
             NotNull: true,
         },
         recipesID: {
             type: "number",
-            PK: true,
             NotNull: true,
         },
         done: {
             type: "boolean",
+            NotNull: true,
+        },
+        orderID: {
+            type: "number",
             NotNull: true,
         },
     },

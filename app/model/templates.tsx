@@ -30,3 +30,8 @@ export interface Layout {
     width: number;
     height: number;
 }
+
+export interface RecipeWithOrder {
+    recipe: Recipe;
+    orderID: number;
+}
