@@ -9,16 +9,19 @@ import SQliter from "./lib/data/sql";
 import recipIngSchema from "./model/schema/recipeIngredientRel";
 import { mealPlansSchema } from "./model/schema/mealPlan";
 import { mealRecipRelSchema } from "./model/schema/mealPlanRecipeRel";
+import { shoppingListSchema } from "./model/schema/shoppingList/shoppinglist";
+import { shopListIngRelSchema } from "./model/schema/shoppingList/shopListIngRel";
+import * as NavigationBar from "expo-navigation-bar";
 
 export default function Layout() {
     useEffect(() => {
         preInitDB();
     }, []);
-
+    NavigationBar.setBackgroundColorAsync("#121212");
     return (
         <ThemeProvider>
             <GlobalStateProvider>
-                <StatusBar style="auto" />
+                <StatusBar style="light" />
                 <Stack>
                     <Stack.Screen
                         name="(tabs)"
@@ -77,6 +80,9 @@ function preInitDB() {
 
         sql.createTable(mealPlansSchema);
         sql.createTable(mealRecipRelSchema);
+
+        sql.createTable(shoppingListSchema);
+        sql.createTable(shopListIngRelSchema);
 
         console.log("Database initialized successfully");
     } catch (error) {

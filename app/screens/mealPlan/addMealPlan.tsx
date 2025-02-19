@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, FlatList, Pressable } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    Pressable,
+    TouchableOpacity,
+} from "react-native";
 import { useState, useEffect, useContext } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Header from "../../components/header";
@@ -26,7 +33,6 @@ export default function AddMealPlan() {
         router.push({
             pathname: "screens/mealPlan/addMealToPlan",
             params: {
-                /// callbackId: "addMealPlanCallback",
                 title: params.title.toString(),
                 planID: params.planID,
             },
@@ -46,30 +52,21 @@ export default function AddMealPlan() {
     };
 
     const handleRnd = (item: RecipeWithOrder) => {
-        // const filteredRecipes: Recipe[] = recipeList.filter(
-        //     (recipe: Recipe) => recipe.ID !== item.recipe.ID
-        // );
-        // if (filteredRecipes.length > 0) {
-        //     const randomRecipe =
-        //         filteredRecipes[
-        //             Math.floor(Math.random() * filteredRecipes.length)
-        //         ];
         const randomRecipe = getRandomRecipe([item.recipe.ID]);
         if (randomRecipe) {
             var model = SQliter.connection().findOne(
                 mealRecipRelSchema,
                 `mealplansID = ${params.planID} AND recipesID = ${item.recipe.ID} and orderID = ${item.orderID}`
             );
-
             if (model) {
                 model.recipesID = randomRecipe.ID;
                 model.update(
                     `mealplansID = ${params.planID} AND orderID = ${model.orderID}`
                 );
-                //console.log(model);
                 var newRnd: RecipeWithOrder = {
                     recipe: randomRecipe,
                     orderID: model.orderID,
+                    done: false,
                 };
                 setLocalRecipeList((prevList) =>
                     prevList.map((listItem) =>
@@ -109,7 +106,6 @@ export default function AddMealPlan() {
                 for (var i: number = 0; i < recipeCount; i++) {
                     let randomRecipe = getRandomRecipe(addedRecipeIDs);
                     if (!randomRecipe && addedRecipeIDs.length > 0) {
-                        // Reset the addedRecipeIDs to allow duplicates
                         addedRecipeIDs.length = 0;
                         randomRecipe = getRandomRecipe(addedRecipeIDs);
                     }
@@ -124,6 +120,7 @@ export default function AddMealPlan() {
                         var newRecipeWithOrder: RecipeWithOrder = {
                             recipe: randomRecipe,
                             orderID: i,
+                            done: false,
                         };
 
                         setLocalRecipeList((prevList) => [
@@ -141,10 +138,32 @@ export default function AddMealPlan() {
                 });
             } else {
                 var newRecipes = mealReciMapper(Number(params.planID));
+
                 setLocalRecipeList((prevList) => [...prevList, ...newRecipes]);
             }
         }
     }, [params.title, params.planID, params.autoGen]);
+
+    const handleCheck = (item: RecipeWithOrder) => {
+        var model = SQliter.Model(mealRecipRelSchema);
+        model.recipesID = item.recipe.ID;
+        model.mealplansID = params.planID;
+        model.done = !item.done;
+        model.orderID = item.orderID;
+        model.update(
+            `mealplansID = ${params.planID} AND orderID = ${model.orderID}`
+        );
+
+        setLocalRecipeList((prevList) =>
+            prevList.map((listItem) =>
+                listItem.orderID === item.orderID
+                    ? { ...listItem, done: !listItem.done }
+                    : listItem
+            )
+        );
+    };
+
+    const cardPress = () => {};
 
     const renderItem = ({ item }: { item: RecipeWithOrder | null }) => {
         if (item === null) {
@@ -155,22 +174,59 @@ export default function AddMealPlan() {
             );
         }
         return (
-            <View style={styles.cardContainer}>
-                <Card cardStyle={styles.card}>
-                    <View style={styles.horiContainer}>
-                        <Text style={styles.titleText}>
-                            {item.recipe.title}
-                        </Text>
-                        <View style={styles.iconContainer}>
-                            <Pressable onPress={() => handleRnd(item)}>
-                                <Ionicons name="dice" size={33} color="black" />
+            <View>
+                <TouchableOpacity
+                    onPress={() => {
+                        router.push({
+                            pathname: `screens/recipe/viewRecipe`,
+                            params: { recipeID: item.recipe.ID },
+                        });
+                    }}
+                >
+                    <Card
+                        cardStyle={StyleSheet.flatten([
+                            styles.card,
+                            item.done && styles.doneItemBackground,
+                        ])}
+                    >
+                        <View style={styles.horiContainer}>
+                            <Pressable
+                                style={styles.checkIconContainer}
+                                onPress={() => handleCheck(item)}
+                            >
+                                <View style={styles.circle}>
+                                    {item.done && (
+                                        <Ionicons
+                                            name="checkmark"
+                                            size={20}
+                                            color="green"
+                                        />
+                                    )}
+                                </View>
                             </Pressable>
-                            <Pressable onPress={() => handleItemDel(item)}>
-                                <Entypo name="cross" size={33} color="black" />
-                            </Pressable>
+
+                            <Text style={styles.titleText}>
+                                {item.recipe.title}
+                            </Text>
+                            <View style={styles.iconContainer}>
+                                <Pressable onPress={() => handleRnd(item)}>
+                                    <Ionicons
+                                        name="dice"
+                                        size={33}
+                                        color="black"
+                                    />
+                                </Pressable>
+                                <Pressable onPress={() => handleItemDel(item)}>
+                                    <Entypo
+                                        name="cross"
+                                        size={33}
+                                        color="black"
+                                    />
+                                </Pressable>
+                            </View>
                         </View>
-                    </View>
-                </Card>
+                    </Card>
+                </TouchableOpacity>
             </View>
         );
     };
@@ -182,6 +238,13 @@ export default function AddMealPlan() {
         });
     };
 
+    const sortedRecipeList = [...localRecipeList].sort((a, b) => {
+        if (a.done === b.done) {
+            return 0;
+        }
+        return a.done ? 1 : -1;
+    });
+
     return (
         <View style={styles.container}>
             <View style={styles.topBox}>
@@ -191,11 +254,10 @@ export default function AddMealPlan() {
                 ></Header>
             </View>
             <FlatList
-                data={[...localRecipeList, null]}
+                data={[...sortedRecipeList, null]}
                 renderItem={renderItem}
                 keyExtractor={(item, index) => index.toString()}
             />
-
             <Pressable
                 style={[styles.addButton, isEndReached && styles.addButtonEnd]}
                 onPress={handleAddPress}
@@ -213,6 +275,9 @@ const styles = StyleSheet.create({
         marginTop: 50,
         marginLeft: 20,
         marginRight: 20,
+    },
+    doneItemBackground: {
+        backgroundColor: "#e0ffe0",
     },
     topBox: {
         flexDirection: "column",
@@ -267,6 +332,18 @@ const styles = StyleSheet.create({
     },
     plusContainer: {
         flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    checkIconContainer: {
+        marginRight: 10,
+    },
+    circle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: "black",
         justifyContent: "center",
         alignItems: "center",
     },

@@ -358,7 +358,7 @@ class SQliter {
                     });
                 }
                 queryPartOne = queryPartOne.slice(0, -1);
-                // console.log(queryPartOne + queryPartTwo);
+                //console.log(queryPartOne + queryPartTwo);
                 this.sqliter.executeSqlWihtout(queryPartOne + queryPartTwo);
             }
             /**

@@ -24,16 +24,26 @@ const Card: React.FC<CardProps> = ({
 };
 const styles = StyleSheet.create({
     card: {
-        borderColor: "black",
-        borderRadius: 20,
-        borderWidth: 3,
-        marginBottom: 10,
-        padding: 10,
+        backgroundColor: "#1e1e1e",
+        borderBottomRightRadius: 35,
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 15,
+        borderBottomLeftRadius: 15,
+        padding: 15,
+        marginBottom: 15,
+        shadowColor: "#4caf50",
+        shadowOffset: {
+            width: 0,
+            height: 8,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 25,
+        elevation: 7,
     },
     cardTitle: {
-        //padding: 10,
         fontWeight: "bold",
         marginBottom: 10,
+        color: "#fff",
     },
 });
 

@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Entypo from "@expo/vector-icons/Entypo";
-import { useNavigation, useRoute } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 
 interface HeaderProps {
@@ -41,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
                         onPress={onGoBack ?? router.back}
                         style={styles.icon}
                     >
-                        <Entypo name="arrow-left" size={44} />
+                        <Entypo name="arrow-left" size={32} color="#fff" />
                     </Pressable>
                 )}
             </View>
@@ -51,33 +50,39 @@ const Header: React.FC<HeaderProps> = ({
             <View style={styles.rightContainer}>
                 {editIcon && (
                     <Pressable onPress={onEdit} style={styles.icon}>
-                        <Entypo name="edit" size={44} />
+                        <Entypo name="edit" size={32} color="#fff" />
                     </Pressable>
                 )}
                 {saveIcon && (
                     <Pressable onPress={onSave} style={styles.icon}>
-                        <Entypo name="save" size={44} />
+                        <Entypo name="save" size={32} color="#fff" />
                     </Pressable>
                 )}
                 {deleteIcon && (
                     <Pressable onPress={onDelete} style={styles.icon}>
-                        <Entypo name="trash" size={44} />
+                        <Entypo name="trash" size={32} color="#fff" />
                     </Pressable>
                 )}
                 {addIcon && (
                     <Pressable onPress={onAdd} style={styles.icon}>
-                        <Entypo name="plus" size={44} />
+                        <Entypo name="plus" size={32} color="#fff" />
                     </Pressable>
                 )}
             </View>
         </View>
     );
 };
+
 const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
         paddingTop: 16,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+
+        borderBottomWidth: 1,
+        borderBottomColor: "#333", // Leichter Rand unten für Trennung
     },
     leftContainer: {
         flex: 1,
@@ -93,10 +98,13 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-end",
     },
-    icon: {},
+    icon: {
+        paddingLeft: 10,
+    },
     headerText: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: "bold",
+        color: "#fff", // Weiße Schriftfarbe für besseren Kontrast
     },
 });
 

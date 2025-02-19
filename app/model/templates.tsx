@@ -34,4 +34,18 @@ export interface Layout {
 export interface RecipeWithOrder {
     recipe: Recipe;
     orderID: number;
+    done: boolean;
+}
+
+export interface ShopListIngRel {
+    shopListID: number;
+    ingredientsID: number;
+    quantity: string;
+    unit: string;
+    done: boolean;
+    ID: number;
+}
+export interface ShoppingLists {
+    listName: string;
+    ID: number;
 }

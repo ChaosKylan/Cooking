@@ -1,9 +1,26 @@
 import { View, Text, StyleSheet } from "react-native";
+import Header from "../components/header";
+import Body from "../components/body";
+import { useState } from "react";
 
 export default function Tab() {
+    const [localList, setLocalList] = useState([]);
+    const [isEndReached, setIsEndReached] = useState(Boolean);
+
+    const renderItem = ({ item }: { item: string }) => {
+        return <Text>{item}</Text>;
+    };
+
     return (
         <View style={styles.container}>
-            <Text>Tab [Shopping]</Text>
+            <View>
+                <Header></Header>
+            </View>
+            <Body
+                data={localList}
+                isEndReached={isEndReached}
+                renderItem={renderItem}
+            ></Body>
         </View>
     );
 }

@@ -40,18 +40,13 @@ const mealReciMapper = (planID: number): RecipeWithOrder[] => {
     );
     var data = mealPlanModel?.join(recipeSchema, mealRecipRelSchema);
 
-    //console.log(data);
-
     var recipeList: RecipeWithOrder[] = [];
+
     if (data && Array.isArray(data.target) && Array.isArray(data.relation)) {
-        recipeList = data.target.map((item: any) => {
-            const relation =
-                data && data.relation
-                    ? data.relation.find(
-                          (rel: any) => rel.recipesID === item.ID
-                      )
-                    : null;
-            return {
+        for (let i = 0; i < data.target.length; i++) {
+            const item = data.target[i];
+            const relation = data.relation[i];
+            const newEntry: RecipeWithOrder = {
                 recipe: {
                     ID: item.ID,
                     title: item.title,
@@ -59,9 +54,31 @@ const mealReciMapper = (planID: number): RecipeWithOrder[] => {
                     instructions: item.instructions,
                 },
                 orderID: relation ? relation.orderID : null,
+                done: relation ? relation.done === "true" : false,
             };
-        });
+            recipeList.push(newEntry);
+        }
     }
+    // if (data && Array.isArray(data.target) && Array.isArray(data.relation)) {
+    //     recipeList = data.target.map((item: any) => {
+    //         const relation =
+    //             data && data.relation
+    //                 ? data.relation.find(
+    //                       (rel: any) => rel.recipesID === item.ID
+    //                   )
+    //                 : null;
+    //         return {
+    //             recipe: {
+    //                 ID: item.ID,
+    //                 title: item.title,
+    //                 ingredient: item.ingredient,
+    //                 instructions: item.instructions,
+    //             },
+    //             orderID: relation ? relation.orderID : null,
+    //             done: relation ? relation.done === "true" : false,
+    //         };
+    //     });
+    // }
     return recipeList;
 };
 
