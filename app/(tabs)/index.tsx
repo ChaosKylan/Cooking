@@ -7,13 +7,11 @@ import {
     Modal,
     Pressable,
     TextInput,
-    ImageBackground,
 } from "react-native";
 import Checkbox from "expo-checkbox";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import SQliter from "../lib/data/sql";
 import { mealPlansSchema } from "../model/schema/mealPlan";
-import { recipeSchema } from "../model/schema/recipe";
 import { mealRecipRelSchema } from "../model/schema/mealPlanRecipeRel";
 import * as Progress from "react-native-progress";
 import Header from "../components/header";
@@ -21,10 +19,13 @@ import Card from "../components/Card";
 import { useRouter } from "expo-router";
 import Entypo from "@expo/vector-icons/Entypo";
 import { Menu, Provider } from "react-native-paper";
-import { Colors } from "react-native/Libraries/NewAppScreen";
 import mealReciMapper from "../helper/mealReciMapper";
 import { RecipeWithOrder } from "../model/templates";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { ThemeContext } from "../lib/provider/themeContext";
+import defaultTheme from "../theme/defaultTheme";
+import globalStyles from "../styles/globalstyles";
 
 interface Plan {
     ID: number;
@@ -45,7 +46,13 @@ export default function Tab() {
     const [renameModalVisible, setRenameModalVisible] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
+    const [isEndReached, setIsEndReached] = useState(false);
+
     const router = useRouter();
+
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
         const planList = SQliter.connection().findAll(mealPlansSchema);
@@ -63,70 +70,79 @@ export default function Tab() {
         });
     }, []);
 
-    const renderItem = ({ item }: { item: Plan }) => (
-        <Pressable
-            onPress={() => {
-                handelEdit(item.name, item.ID);
-            }}
-        >
-            <Card title={item.name}>
-                <View style={styles.horiContainer}>
-                    <Progress.Bar
-                        progress={
-                            item.numberOfRecipe > 0
-                                ? item.recipesDone / item.numberOfRecipe
-                                : 0
-                        }
-                        color="#4caf50"
-                        unfilledColor="#555"
-                        style={styles.progessBar}
-                    >
-                        <Text style={styles.progressText}>
-                            {item.recipesDone} / {item.numberOfRecipe}
-                        </Text>
-                    </Progress.Bar>
-                    <View style={styles.spacer} />
-                    <Menu
-                        visible={menuVisible[item.ID] || false}
-                        onDismiss={() =>
-                            setMenuVisible((prev) => ({
-                                ...prev,
-                                [item.ID]: false,
-                            }))
-                        }
-                        anchor={
-                            <Pressable
-                                onPress={() =>
-                                    setMenuVisible((prev) => ({
-                                        ...prev,
-                                        [item.ID]: true,
-                                    }))
-                                }
-                            >
-                                <Entypo
-                                    name="dots-three-vertical"
-                                    size={24}
-                                    color="white"
-                                />
-                            </Pressable>
-                        }
-                        contentStyle={styles.menuContent} // Menüinhalt-Stil hinzufügen
-                    >
-                        <Menu.Item
-                            onPress={() => handleRename(item)}
-                            title="Umbennen"
-                            titleStyle={styles.menuItemText} // Menü-Item-Stil hinzufügen
-                        />
-                        <Menu.Item
-                            onPress={() => handleDelete(item.ID)}
-                            title="Löschen"
-                            titleStyle={styles.menuItemText} // Menü-Item-Stil hinzufügen
-                        />
-                    </Menu>
+    const renderItem = ({ item }: { item: Plan | null }) => {
+        if (item === null) {
+            return (
+                <View>
+                    <Text style={styles.placeHoler}></Text>
                 </View>
-            </Card>
-        </Pressable>
-    );
+            );
+        }
+        return (
+            <Pressable
+                onPress={() => {
+                    handelEdit(item.name, item.ID);
+                }}
+            >
+                <Card title={item.name}>
+                    <View style={styles.horiContainer}>
+                        <Progress.Bar
+                            progress={
+                                item.numberOfRecipe > 0
+                                    ? item.recipesDone / item.numberOfRecipe
+                                    : 0
+                            }
+                            color={theme.colors.primary}
+                            unfilledColor={theme.colors.borderColor}
+                            style={styles.progessBar}
+                        >
+                            <Text style={styles.progressText}>
+                                {item.recipesDone} / {item.numberOfRecipe}
+                            </Text>
+                        </Progress.Bar>
+                        <View style={styles.spacer} />
+                        <Menu
+                            visible={menuVisible[item.ID] || false}
+                            onDismiss={() =>
+                                setMenuVisible((prev) => ({
+                                    ...prev,
+                                    [item.ID]: false,
+                                }))
+                            }
+                            anchor={
+                                <Pressable
+                                    onPress={() =>
+                                        setMenuVisible((prev) => ({
+                                            ...prev,
+                                            [item.ID]: true,
+                                        }))
+                                    }
+                                >
+                                    <Entypo
+                                        name="dots-three-vertical"
+                                        size={24}
+                                        color={theme.colors.iconColor}
+                                    />
+                                </Pressable>
+                            }
+                            contentStyle={styles.menuContent} // Menüinhalt-Stil hinzufügen
+                        >
+                            <Menu.Item
+                                onPress={() => handleRename(item)}
+                                title="Umbennen"
+                                titleStyle={styles.menuItemText} // Menü-Item-Stil hinzufügen
+                            />
+                            <Menu.Item
+                                onPress={() => handleDelete(item.ID)}
+                                title="Löschen"
+                                titleStyle={styles.menuItemText} // Menü-Item-Stil hinzufügen
+                            />
+                        </Menu>
+                    </View>
+                </Card>
+            </Pressable>
+        );
+    };
 
     const handleRename = (item: Plan) => {
         setSelectedPlan(item);
@@ -217,20 +233,22 @@ export default function Tab() {
                     <View style={styles.topBox}>
                         <Header
                             onAdd={handelAdd}
-                            addIcon={true}
+                            addIcon={false}
                             backArrow={false}
                         ></Header>
                     </View>
-
                     <TouchableWithoutFeedback
                         onPress={() => setModalVisible(false)}
                     >
                         <View>
                             <FlatList
-                                data={plan}
+                                data={[...plan, null]}
                                 renderItem={renderItem}
-                                keyExtractor={(item) => item.ID.toString()}
+                                keyExtractor={(item, index) => index.toString()}
+                                onEndReached={() => setIsEndReached(true)}
+                                onEndReachedThreshold={0.5}
                             />
+
                             <Modal
                                 animationType="none"
                                 transparent={true}
@@ -251,13 +269,17 @@ export default function Tab() {
                                                 <Entypo
                                                     name="cross"
                                                     size={24}
-                                                    color="white"
+                                                    color={
+                                                        theme.colors.iconColor
+                                                    }
                                                 />
                                             </Pressable>
                                         </View>
                                         <TextInput
                                             placeholder="Name des Essenplans"
-                                            placeholderTextColor="#888"
+                                            placeholderTextColor={
+                                                theme.colors.placeholderText
+                                            }
                                             style={styles.input}
                                             value={newPlanName}
                                             onChangeText={setNewPlanName}
@@ -268,7 +290,7 @@ export default function Tab() {
                                                 onValueChange={
                                                     handelCheckBoxChanged
                                                 }
-                                                color="#4caf50"
+                                                color={theme.colors.primary}
                                             />
                                             <Text style={styles.checkBoxText}>
                                                 Automatisch Generieren
@@ -279,7 +301,10 @@ export default function Tab() {
                                                 <TextInput
                                                     keyboardType="number-pad"
                                                     placeholder="Anzahl an Essen"
-                                                    placeholderTextColor="#888"
+                                                    placeholderTextColor={
+                                                        theme.colors
+                                                            .placeholderText
+                                                    }
                                                     style={styles.input}
                                                     value={recipeCount}
                                                     onChangeText={
@@ -319,13 +344,17 @@ export default function Tab() {
                                                 <Entypo
                                                     name="cross"
                                                     size={24}
-                                                    color="white"
+                                                    color={
+                                                        theme.colors.iconColor
+                                                    }
                                                 />
                                             </Pressable>
                                         </View>
                                         <TextInput
                                             placeholder="Neuer Name des Essenplans"
-                                            placeholderTextColor="#888"
+                                            placeholderTextColor={
+                                                theme.colors.placeholderText
+                                            }
                                             style={styles.input}
                                             value={newPlanName}
                                             onChangeText={setNewPlanName}
@@ -343,123 +372,69 @@ export default function Tab() {
                             </Modal>
                         </View>
                     </TouchableWithoutFeedback>
+
+                    <Pressable style={styles.addButton} onPress={handelAdd}>
+                        <Text style={styles.addButtonText}>add</Text>
+                    </Pressable>
                 </View>
             </SafeAreaView>
         </Provider>
     );
 }
-
-const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#121212",
-    },
-
-    container: {
-        flex: 1,
-        marginLeft: 20,
-        marginRight: 20,
-        backgroundColor: "#121212",
-    },
-    horiContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-        alignSelf: "center",
-    },
-    progessBar: {
-        alignItems: "center",
-        width: "90%",
-        borderRadius: 10,
-        borderColor: "#4caf50",
-    },
-    spacer: {
-        width: 10,
-    },
-    topBox: {
-        flexDirection: "column",
-        marginBottom: 30,
-    },
-    planContainer: {
-        marginBottom: 16,
-        padding: 16,
-        backgroundColor: "#1e1e1e",
-        borderRadius: 8,
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    planName: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 8,
-        color: "#fff",
-    },
-    checkBoxText: {
-        marginLeft: 8,
-        color: "#fff",
-    },
-    progressText: {
-        fontSize: 14,
-        marginBottom: 4,
-        color: "#fff",
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-    },
-    modalView: {
-        width: "75%",
-        padding: 20,
-        backgroundColor: "#1e1e1e",
-        borderRadius: 10,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
+const createStyles = (theme: typeof defaultTheme) =>
+    StyleSheet.create({
+        addButton: {
+            position: "absolute",
+            bottom: 20,
+            right: 20,
+            elevation: 5,
+            backgroundColor: "#4caf50",
+            borderRadius: 50,
+            width: 60,
+            height: 60,
+            justifyContent: "center",
+            alignItems: "center",
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    modalHeader: {
-        width: "100%",
-        flexDirection: "row",
-        justifyContent: "flex-end",
-        paddingBottom: 10,
-    },
-    closeButton: {
-        padding: 5,
-    },
-    input: {
-        width: "100%",
-        borderColor: "#555",
-        borderWidth: 1,
-        borderRadius: 5,
-        marginBottom: 10,
-        color: "#fff",
-        padding: 10,
-    },
-    button: {
-        marginTop: 10,
-        padding: 10,
-        backgroundColor: "#4caf50",
-        borderRadius: 5,
-        alignItems: "center",
-    },
-    buttonText: {
-        color: "white",
-        fontWeight: "bold",
-    },
-    menuContent: {
-        backgroundColor: "#1e1e1e",
-        borderColor: "#4caf50",
-        borderWidth: 1,
-    },
-    menuItemText: {
-        color: "#fff",
-    },
-});
+        addButtonEnd: {
+            position: "relative",
+            bottom: 0,
+            right: 0,
+            marginTop: 20,
+        },
+        addButtonText: {
+            color: "white",
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        planContainer: {
+            marginBottom: 16,
+            padding: 16,
+            backgroundColor: theme.colors.cardBackground,
+            borderRadius: 8,
+            shadowColor: theme.colors.shadowColor,
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+        },
+        planName: {
+            fontSize: 18,
+            fontWeight: "bold",
+            marginBottom: 8,
+            color: theme.colors.text,
+        },
+        checkBoxText: {
+            marginLeft: 8,
+            color: theme.colors.text,
+        },
+        progessBar: {
+            alignItems: "center",
+            width: "90%",
+            borderRadius: 10,
+            borderColor: theme.colors.primary,
+        },
+        progressText: {
+            fontSize: 14,
+            marginBottom: 4,
+            color: theme.colors.text,
+        },
+    });

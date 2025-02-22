@@ -20,6 +20,11 @@ import Header from "../components/header";
 import Card from "../components/Card";
 import EditDeleteModal from "../components/EditDeleteModal";
 
+import { ThemeContext } from "../lib/provider/themeContext";
+import defaultTheme from "../theme/defaultTheme";
+import globalStyles from "../styles/globalstyles";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function Tab() {
     var [searchText, setSearchText] = useState("");
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
@@ -30,6 +35,11 @@ export default function Tab() {
     const recipeRefs = useRef<{ [key: number]: View }>({});
 
     const router = useRouter();
+
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    var styles = { ...createStyles(theme), ...globalStyles(theme) };
+
     function searchCheck(model: Recipe) {
         if (!searchText || searchText == "") return true;
         return model.title.includes(searchText);
@@ -126,125 +136,127 @@ export default function Tab() {
     );
     //screens/addRecipe
     return (
-        <View style={styles.container}>
-            <View style={styles.topBox}>
-                {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
-                <Header backArrow={false} addIcon={true} onAdd={handleNew} />
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <View style={styles.topBox}>
+                    {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
+                    <Header
+                        backArrow={false}
+                        addIcon={true}
+                        onAdd={handleNew}
+                    />
 
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Suchen"
-                    onChangeText={(data) => {
-                        setSearchText(data);
-                    }}
-                ></TextInput>
-            </View>
-            <TouchableWithoutFeedback
-                onPress={Keyboard.dismiss}
-                accessible={false}
-            >
-                <FlatList
-                    data={recipeList.filter((model: Recipe) =>
-                        searchCheck(model)
-                    )}
-                    renderItem={renderItem}
-                    keyExtractor={(item: Recipe, index: number) =>
-                        index.toString()
-                    }
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Suchen"
+                        placeholderTextColor={theme.colors.text}
+                        onChangeText={(data) => {
+                            setSearchText(data);
+                        }}
+                    ></TextInput>
+                </View>
+                <TouchableWithoutFeedback
+                    onPress={Keyboard.dismiss}
+                    accessible={false}
+                >
+                    <FlatList
+                        data={recipeList.filter((model: Recipe) =>
+                            searchCheck(model)
+                        )}
+                        renderItem={renderItem}
+                        keyExtractor={(item: Recipe, index: number) =>
+                            index.toString()
+                        }
+                    />
+                </TouchableWithoutFeedback>
+                <EditDeleteModal
+                    modalVisible={modalVisible}
+                    setModalVisible={setModalVisible}
+                    modalPosition={modalPosition}
+                    handleEdit={handleEdit}
+                    handleDelete={handleDelete}
                 />
-            </TouchableWithoutFeedback>
-            <EditDeleteModal
-                modalVisible={modalVisible}
-                setModalVisible={setModalVisible}
-                modalPosition={modalPosition}
-                handleEdit={handleEdit}
-                handleDelete={handleDelete}
-            />
-        </View>
+            </View>
+        </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        marginTop: 50,
-        marginLeft: 20,
-        marginRight: 20,
-    },
-    card: {
-        borderColor: "black",
-        borderRadius: 20,
-        borderWidth: 3,
-        marginBottom: 10,
-    },
-    cardInner: {
-        flexDirection: "row",
-        marginBottom: 10,
-    },
-    topBox: {
-        flexDirection: "column",
-        marginBottom: 30,
-    },
-    cardText: {
-        flexGrow: 1,
-        paddingTop: 5,
-        flexShrink: 1,
-    },
-    cardTitle: {
-        padding: 10,
-        fontWeight: "bold",
-    },
-    cardSubTitle: {
-        flexGrow: 1,
-        fontWeight: "bold",
-        paddingTop: 5,
-        paddingLeft: 5,
-    },
-    searchInput: {
-        flexGrow: 1,
-        borderColor: "black",
-        borderRadius: 20,
-        borderWidth: 3,
-        margin: 10,
-        textAlign: "center",
-        fontSize: 24,
-    },
-    addButton: {},
-    icon: {
-        alignSelf: "flex-end",
-        color: "black",
-        paddingBottom: 10,
-    },
-    centeredView: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 22,
-    },
-    modalView: {
-        margin: 20,
-        backgroundColor: "white",
-        borderRadius: 20,
-        padding: 10,
-        width: "30%",
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
+const createStyles = (theme: typeof defaultTheme) =>
+    StyleSheet.create({
+        card: {
+            borderColor: "black",
+            borderRadius: 20,
+            borderWidth: 3,
+            marginBottom: 10,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    iconContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        width: "100%",
-        paddingLeft: 5,
-    },
-    iconButton: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-});
+        cardInner: {
+            flexDirection: "row",
+            marginBottom: 10,
+        },
+        cardText: {
+            flexGrow: 1,
+            paddingTop: 5,
+            flexShrink: 1,
+            color: theme.colors.text,
+        },
+        cardTitle: {
+            padding: 10,
+            fontWeight: "bold",
+            color: theme.colors.text,
+        },
+        cardSubTitle: {
+            flexGrow: 1,
+            fontWeight: "bold",
+            paddingTop: 5,
+            paddingLeft: 5,
+            color: theme.colors.text,
+        },
+        searchInput: {
+            flexGrow: 1,
+            borderColor: theme.colors.borderColor,
+            borderRadius: 20,
+            borderWidth: 1,
+            margin: 10,
+            textAlign: "center",
+            fontSize: 24,
+            color: theme.colors.text,
+        },
+        addButton: {},
+        icon: {
+            alignSelf: "flex-end",
+            color: "black",
+            paddingBottom: 10,
+        },
+        centeredView: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 22,
+        },
+        modalView: {
+            margin: 20,
+            backgroundColor: theme.colors.background,
+            borderRadius: 20,
+            padding: 10,
+            width: "30%",
+            alignItems: "center",
+            shadowColor: theme.colors.shadowColor,
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+        },
+        iconContainer: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+            paddingLeft: 5,
+        },
+        iconButton: {
+            flexDirection: "row",
+            alignItems: "center",
+        },
+    });

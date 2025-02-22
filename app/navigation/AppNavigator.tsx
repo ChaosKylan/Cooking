@@ -24,6 +24,11 @@ export default function AppNavigator() {
                 name="screens/mealPlan/addMealToPlan"
                 options={{ headerShown: false }}
             />
+
+            <Stack.Screen
+                name="screens/shoppingList/addIngredientsToList"
+                options={{ headerShown: false }}
+            />
         </Stack>
     );
 }

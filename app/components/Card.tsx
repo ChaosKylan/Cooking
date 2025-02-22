@@ -5,6 +5,7 @@ interface CardProps {
     children?: React.ReactNode;
     cardStyle?: ViewStyle;
     cardTitleStyle?: TextStyle;
+    visible?: boolean;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -12,14 +13,19 @@ const Card: React.FC<CardProps> = ({
     children,
     cardStyle,
     cardTitleStyle,
+    visible = true,
 }) => {
     return (
-        <View style={[styles.card, cardStyle]}>
-            {title ? (
-                <Text style={[styles.cardTitle, cardTitleStyle]}>{title}</Text>
-            ) : null}
-            {children}
-        </View>
+        visible && (
+            <View style={[styles.card, cardStyle]}>
+                {title ? (
+                    <Text style={[styles.cardTitle, cardTitleStyle]}>
+                        {title}
+                    </Text>
+                ) : null}
+                {children}
+            </View>
+        )
     );
 };
 const styles = StyleSheet.create({

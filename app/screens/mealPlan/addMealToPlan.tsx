@@ -19,14 +19,24 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Recipe } from "../../model/templates";
 import { mealRecipRelSchema } from "@/app/model/schema/mealPlanRecipeRel";
 
+import { ThemeContext } from "../../lib/provider/themeContext";
+import defaultTheme from "../../theme/defaultTheme";
+import globalStyles from "../../styles/globalstyles";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function AddMealToPlan() {
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
     var [searchText, setSearchText] = useState("");
     const router = useRouter();
 
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    var styles = { ...createStyles(theme), ...globalStyles(theme) };
+
     const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>(
         {}
     );
+    const [addedRecipeName, setAddedRecipeName] = useState<string | null>(null);
     const params = useLocalSearchParams();
 
     const handleAdd = (item: Recipe) => {
@@ -45,8 +55,10 @@ export default function AddMealToPlan() {
         model.insert();
 
         setAddedItems((prev) => ({ ...prev, [item.ID]: true }));
+        setAddedRecipeName(item.title);
         setTimeout(() => {
             setAddedItems((prev) => ({ ...prev, [item.ID]: false }));
+            setAddedRecipeName(null);
         }, 3000);
     };
 
@@ -69,7 +81,7 @@ export default function AddMealToPlan() {
                             <Ionicons
                                 name="checkmark"
                                 size={24}
-                                color="white"
+                                color={theme.colors.primary}
                             />
                         </Pressable>
                     ) : (
@@ -77,7 +89,11 @@ export default function AddMealToPlan() {
                             style={styles.addButton}
                             onPress={() => handleAdd(item)}
                         >
-                            <Ionicons name="add" size={24} color="white" />
+                            <Ionicons
+                                name="add"
+                                size={24}
+                                color={theme.colors.primary}
+                            />
                         </Pressable>
                     )}
                 </View>
@@ -101,90 +117,104 @@ export default function AddMealToPlan() {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topBox}>
-                <Header headerText="Rezepte" onGoBack={goBack}></Header>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Suchen"
-                    onChangeText={(data) => {
-                        setSearchText(data);
-                    }}
-                ></TextInput>
-            </View>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <View style={styles.topBox}>
+                    <Header headerText="Rezepte" onGoBack={goBack}></Header>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Suchen"
+                        onChangeText={(data) => {
+                            setSearchText(data);
+                        }}
+                        placeholderTextColor={theme.colors.text}
+                    ></TextInput>
+                </View>
 
-            <TouchableWithoutFeedback
-                onPress={Keyboard.dismiss}
-                accessible={false}
-            >
-                <FlatList
-                    data={recipeList.filter((model: Recipe) =>
-                        searchCheck(model)
-                    )}
-                    renderItem={renderItem}
-                    keyExtractor={(item: Recipe, index: number) =>
-                        index.toString()
-                    }
-                />
-            </TouchableWithoutFeedback>
-        </View>
+                <TouchableWithoutFeedback
+                    onPress={Keyboard.dismiss}
+                    accessible={false}
+                >
+                    <FlatList
+                        data={recipeList.filter((model: Recipe) =>
+                            searchCheck(model)
+                        )}
+                        renderItem={renderItem}
+                        keyExtractor={(item: Recipe, index: number) =>
+                            index.toString()
+                        }
+                    />
+                </TouchableWithoutFeedback>
+                {addedRecipeName && (
+                    <Card cardStyle={styles.addedRecipeContainer}>
+                        <Text style={styles.addedRecipeText}>
+                            {addedRecipeName} wurde hinzugefügt!
+                        </Text>
+                    </Card>
+                )}
+            </View>
+        </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        marginTop: 50,
-        marginLeft: 20,
-        marginRight: 20,
-    },
-
-    addButton: {
-        backgroundColor: "#4caf50",
-        borderRadius: 50,
-        width: 40,
-        height: 40,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    cardItems: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
-    },
-    cardText: {
-        fontSize: 22,
-    },
-    topBox: {
-        flexDirection: "column",
-        marginBottom: 30,
-    },
-    card: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    titleText: {
-        flex: 1,
-        textAlign: "left",
-    },
-    iconContainer: {
-        flexDirection: "row",
-        justifyContent: "flex-end",
-    },
-    plusContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    searchInput: {
-        flexGrow: 1,
-        borderColor: "black",
-        borderRadius: 20,
-        borderWidth: 3,
-        margin: 10,
-        textAlign: "center",
-        fontSize: 24,
-    },
-});
+const createStyles = (theme: typeof defaultTheme) =>
+    StyleSheet.create({
+        addButton: {
+            backgroundColor: theme.colors.background,
+            borderRadius: 50,
+            width: 40,
+            height: 40,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        cardItems: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10,
+        },
+        cardText: {
+            color: theme.colors.text,
+        },
+        card: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        titleText: {
+            flex: 1,
+            textAlign: "left",
+        },
+        iconContainer: {
+            flexDirection: "row",
+            justifyContent: "flex-end",
+        },
+        plusContainer: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        searchInput: {
+            flexGrow: 1,
+            borderColor: theme.colors.borderColor,
+            borderRadius: 20,
+            borderWidth: 3,
+            margin: 10,
+            textAlign: "center",
+            fontSize: 24,
+            color: theme.colors.text,
+        },
+        addedRecipeContainer: {
+            position: "absolute",
+            bottom: 20,
+            left: 20,
+            right: 20,
+            padding: 10,
+            alignItems: "center",
+        },
+        addedRecipeText: {
+            color: theme.colors.primary,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+    });

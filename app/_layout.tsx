@@ -1,5 +1,4 @@
 import { Stack } from "expo-router/stack";
-import { ThemeProvider } from "./lib/provider/themeContext";
 import { StatusBar } from "expo-status-bar";
 import { GlobalStateProvider } from "./lib/provider/GlobalState";
 import { useEffect } from "react";
@@ -11,17 +10,16 @@ import { mealPlansSchema } from "./model/schema/mealPlan";
 import { mealRecipRelSchema } from "./model/schema/mealPlanRecipeRel";
 import { shoppingListSchema } from "./model/schema/shoppingList/shoppinglist";
 import { shopListIngRelSchema } from "./model/schema/shoppingList/shopListIngRel";
-import * as NavigationBar from "expo-navigation-bar";
+import { ThemeProvider, useTheme } from "./lib/provider/themeContext";
 
 export default function Layout() {
     useEffect(() => {
+        3;
         preInitDB();
     }, []);
-    NavigationBar.setBackgroundColorAsync("#121212");
     return (
         <ThemeProvider>
             <GlobalStateProvider>
-                <StatusBar style="light" />
                 <Stack>
                     <Stack.Screen
                         name="(tabs)"
@@ -31,24 +29,18 @@ export default function Layout() {
                         name="screens/recipe/addRecipe"
                         options={{
                             headerShown: false,
-                            // headerTitle: "Recipe",
-                            // headerTitleAlign: "center",
                         }}
                     ></Stack.Screen>
                     <Stack.Screen
                         name="screens/recipe/viewRecipe"
                         options={{
                             headerShown: false,
-                            // headerTitle: "Recipe",
-                            // headerTitleAlign: "center",
                         }}
                     ></Stack.Screen>
                     <Stack.Screen
                         name="screens/mealPlan/addMealPlan"
                         options={{
                             headerShown: false,
-                            // headerTitle: "Recipe",
-                            // headerTitleAlign: "center",
                         }}
                     ></Stack.Screen>
 
@@ -56,8 +48,13 @@ export default function Layout() {
                         name="screens/mealPlan/addMealToPlan"
                         options={{
                             headerShown: false,
-                            // headerTitle: "Recipe",
-                            // headerTitleAlign: "center",
+                        }}
+                    ></Stack.Screen>
+
+                    <Stack.Screen
+                        name="screens/shoppingList/addIngredientsToList"
+                        options={{
+                            headerShown: false,
                         }}
                     ></Stack.Screen>
                 </Stack>

@@ -19,6 +19,11 @@ import SQliter from "@/app/lib/data/sql";
 import { mealRecipRelSchema } from "@/app/model/schema/mealPlanRecipeRel";
 import { RecipeWithOrder } from "../../model/templates";
 
+import { ThemeContext } from "../../lib/provider/themeContext";
+import defaultTheme from "../../theme/defaultTheme";
+import globalStyles from "../../styles/globalstyles";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function AddMealPlan() {
     const [localRecipeList, setLocalRecipeList] = useState<RecipeWithOrder[]>(
         []
@@ -28,6 +33,10 @@ export default function AddMealPlan() {
 
     const params = useLocalSearchParams();
     const router = useRouter();
+
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     const handleAddPress = () => {
         router.push({
@@ -163,8 +172,6 @@ export default function AddMealPlan() {
         );
     };
 
-    const cardPress = () => {};
-
     const renderItem = ({ item }: { item: RecipeWithOrder | null }) => {
         if (item === null) {
             return (
@@ -199,7 +206,7 @@ export default function AddMealPlan() {
                                         <Ionicons
                                             name="checkmark"
                                             size={20}
-                                            color="green"
+                                            color={theme.colors.checkMarkDone}
                                         />
                                     )}
                                 </View>
@@ -213,14 +220,14 @@ export default function AddMealPlan() {
                                     <Ionicons
                                         name="dice"
                                         size={33}
-                                        color="black"
+                                        color={theme.colors.iconColor}
                                     />
                                 </Pressable>
                                 <Pressable onPress={() => handleItemDel(item)}>
                                     <Entypo
                                         name="cross"
                                         size={33}
-                                        color="black"
+                                        color={theme.colors.iconColor}
                                     />
                                 </Pressable>
                             </View>
@@ -246,105 +253,97 @@ export default function AddMealPlan() {
     });
 
     return (
-        <View style={styles.container}>
-            <View style={styles.topBox}>
-                <Header
-                    headerText={params.title.toString()}
-                    onGoBack={goBack}
-                ></Header>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <View style={styles.topBox}>
+                    <Header
+                        headerText={params.title.toString()}
+                        onGoBack={goBack}
+                    ></Header>
+                </View>
+                <FlatList
+                    data={[...sortedRecipeList, null]}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => index.toString()}
+                />
+                <Pressable
+                    style={[
+                        styles.addButton,
+                        isEndReached && styles.addButtonEnd,
+                    ]}
+                    onPress={handleAddPress}
+                >
+                    <Text style={styles.addButtonText}>add</Text>
+                </Pressable>
             </View>
-            <FlatList
-                data={[...sortedRecipeList, null]}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => index.toString()}
-            />
-            <Pressable
-                style={[styles.addButton, isEndReached && styles.addButtonEnd]}
-                onPress={handleAddPress}
-            >
-                <Text style={styles.addButtonText}>add</Text>
-            </Pressable>
-        </View>
+        </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    placeHoler: { height: 100 },
-    container: {
-        flex: 1,
-        marginTop: 50,
-        marginLeft: 20,
-        marginRight: 20,
-    },
-    doneItemBackground: {
-        backgroundColor: "#e0ffe0",
-    },
-    topBox: {
-        flexDirection: "column",
-        marginBottom: 30,
-    },
-    cardContainer: {
-        width: "100%",
-    },
-    card: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    horiContainer: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        width: "100%",
-        padding: 10,
-    },
-    titleText: {
-        flex: 1,
-        textAlign: "left",
-        color: "black",
-    },
-    iconContainer: {
-        flexDirection: "row",
-        justifyContent: "flex-end",
-    },
-    addButton: {
-        position: "absolute",
-        bottom: 20,
-        right: 20,
-        elevation: 5,
-        backgroundColor: "#4caf50",
-        borderRadius: 50,
-        width: 60,
-        height: 60,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    addButtonEnd: {
-        position: "relative",
-        bottom: 0,
-        right: 0,
-        marginTop: 20,
-    },
-    addButtonText: {
-        color: "white",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    plusContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    checkIconContainer: {
-        marginRight: 10,
-    },
-    circle: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: "black",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-});
+const createStyles = (theme: typeof defaultTheme) =>
+    StyleSheet.create({
+        cardContainer: {
+            width: "100%",
+        },
+        card: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        horiContainer: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            padding: 10,
+        },
+        titleText: {
+            flex: 1,
+            textAlign: "left",
+            color: theme.colors.text,
+        },
+        iconContainer: {
+            flexDirection: "row",
+            justifyContent: "flex-end",
+        },
+        addButton: {
+            position: "absolute",
+            bottom: 20,
+            right: 20,
+            elevation: 5,
+            backgroundColor: theme.colors.menuBorderColor,
+            borderRadius: 50,
+            width: 60,
+            height: 60,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        addButtonEnd: {
+            position: "relative",
+            bottom: 0,
+            right: 0,
+            marginTop: 20,
+        },
+        addButtonText: {
+            color: theme.colors.text,
+            fontSize: 16,
+            fontWeight: "bold",
+        },
+        plusContainer: {
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        checkIconContainer: {
+            marginRight: 10,
+        },
+        circle: {
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: theme.colors.borderColor,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+    });

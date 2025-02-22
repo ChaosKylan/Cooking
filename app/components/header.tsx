@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Entypo from "@expo/vector-icons/Entypo";
 import { useRouter } from "expo-router";
+import defaultTheme from "../theme/defaultTheme";
+import globalStyles from "../styles/globalstyles";
+import { ThemeContext } from "../lib/provider/themeContext";
 
 interface HeaderProps {
     onSave?: () => void;
@@ -32,6 +35,9 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
     const router = useRouter();
 
+    const { theme, setTheme } = useContext(ThemeContext);
+    var styles = { ...createStyles(theme), ...globalStyles(theme) };
+
     return (
         <View style={styles.header}>
             <View style={styles.leftContainer}>
@@ -40,7 +46,11 @@ const Header: React.FC<HeaderProps> = ({
                         onPress={onGoBack ?? router.back}
                         style={styles.icon}
                     >
-                        <Entypo name="arrow-left" size={32} color="#fff" />
+                        <Entypo
+                            name="arrow-left"
+                            size={32}
+                            color={theme.colors.iconColor}
+                        />
                     </Pressable>
                 )}
             </View>
@@ -50,22 +60,38 @@ const Header: React.FC<HeaderProps> = ({
             <View style={styles.rightContainer}>
                 {editIcon && (
                     <Pressable onPress={onEdit} style={styles.icon}>
-                        <Entypo name="edit" size={32} color="#fff" />
+                        <Entypo
+                            name="edit"
+                            size={32}
+                            color={theme.colors.iconColor}
+                        />
                     </Pressable>
                 )}
                 {saveIcon && (
                     <Pressable onPress={onSave} style={styles.icon}>
-                        <Entypo name="save" size={32} color="#fff" />
+                        <Entypo
+                            name="save"
+                            size={32}
+                            color={theme.colors.iconColor}
+                        />
                     </Pressable>
                 )}
                 {deleteIcon && (
                     <Pressable onPress={onDelete} style={styles.icon}>
-                        <Entypo name="trash" size={32} color="#fff" />
+                        <Entypo
+                            name="trash"
+                            size={32}
+                            color={theme.colors.iconColor}
+                        />
                     </Pressable>
                 )}
                 {addIcon && (
                     <Pressable onPress={onAdd} style={styles.icon}>
-                        <Entypo name="plus" size={32} color="#fff" />
+                        <Entypo
+                            name="plus"
+                            size={32}
+                            color={theme.colors.iconColor}
+                        />
                     </Pressable>
                 )}
             </View>
@@ -73,39 +99,37 @@ const Header: React.FC<HeaderProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingTop: 16,
-        paddingBottom: 16,
-        paddingHorizontal: 20,
-
-        borderBottomWidth: 1,
-        borderBottomColor: "#333", // Leichter Rand unten für Trennung
-    },
-    leftContainer: {
-        flex: 1,
-        flexDirection: "row",
-        justifyContent: "flex-start",
-    },
-    centerContainer: {
-        flex: 2,
-        alignItems: "center",
-    },
-    rightContainer: {
-        flex: 1,
-        flexDirection: "row",
-        justifyContent: "flex-end",
-    },
-    icon: {
-        paddingLeft: 10,
-    },
-    headerText: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#fff", // Weiße Schriftfarbe für besseren Kontrast
-    },
-});
+const createStyles = (theme: typeof defaultTheme) =>
+    StyleSheet.create({
+        header: {
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            // borderBottomWidth: 1,
+            // borderBottomColor: "#333",
+        },
+        leftContainer: {
+            flex: 1,
+            flexDirection: "row",
+            justifyContent: "flex-start",
+        },
+        centerContainer: {
+            flex: 2,
+            alignItems: "center",
+        },
+        rightContainer: {
+            flex: 1,
+            flexDirection: "row",
+            justifyContent: "flex-end",
+        },
+        icon: {
+            paddingTop: 5,
+        },
+        headerText: {
+            fontSize: 20,
+            fontWeight: "bold",
+            color: theme.colors.text,
+        },
+    });
 
 export default Header;

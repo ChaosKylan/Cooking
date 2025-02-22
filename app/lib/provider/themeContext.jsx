@@ -1,37 +1,28 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import * as dafaultTheme from "../../theme/defaultTheme";
+import defaultColors from "../../theme/defaultTheme";
+import * as NavigationBar from "expo-navigation-bar";
+import { StatusBar } from "expo-status-bar";
 
 export const ThemeContext = createContext();
 
-// export const ThemeProvider = ({ children }) => {
-//     const [theme, setTheme] = useState(dafaultTheme); // ToDo hole aktuelles Theme aus Local Storage
-
-//     // useEffect(() => {
-//     //     //toDo setNew Theme Name to Local Storage
-//     // }, [theme]);
-
-//     // // console.log(theme);
-//     // const contextValue = {
-//     //     theme,
-//     //     setTheme,
-//     // };
-
-//     return (
-//         <ThemeContext.Provider value={contextValue}>
-//             {children}
-//         </ThemeContext.Provider>
-//     );
-// };
-
-// export const useTheme = () => {
-//     return useContext(ThemeContext);
-// };
-
 export const ThemeProvider = (props) => {
-    const [theme, setTheme] = useState(dafaultTheme);
+    const [statusBarColor, setStatusBarColor] = useState("auto");
+
+    const [theme, setTheme] = useState(defaultColors);
+
+    useEffect(() => {
+        NavigationBar.setBackgroundColorAsync(theme.colors.background);
+        setStatusBarColor(theme.colors.statusBar);
+    }, [theme]);
+
     return (
-        <ThemeContext.Provider value={[theme, setTheme]}>
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+            <StatusBar style={statusBarColor} />
             {props.children}
         </ThemeContext.Provider>
     );
+};
+
+export const useTheme = () => {
+    return useContext(ThemeContext);
 };
