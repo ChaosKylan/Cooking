@@ -25,6 +25,7 @@ import { shoppingListSchema } from "../model/schema/shoppingList/shoppinglist";
 import { Ingredient, ShoppingLists, ShopListIngRel } from "../model/templates";
 import shoppingListIngMapper from "../helper/shoppingListIngMapper";
 import Body from "../components/body";
+import { shopListIngRelSchema } from "../model/schema/shoppingList/shopListIngRel";
 
 interface ShoppingListRel {
     shoppingList: ShoppingLists;
@@ -87,12 +88,28 @@ export default function Tab() {
 
     function handleDelete(ID: number): void {
         var model = SQliter.Model(shoppingListSchema);
+        var relModel = SQliter.connection().findAll(
+            shopListIngRelSchema,
+            `shoppinglistsID = ${ID}`
+        );
+
+        if (relModel) {
+            relModel.forEach((rel) => {
+                rel.delete();
+            });
+        }
+
         model.ID = ID;
         model.delete();
 
         setLocalList((prevList) =>
             prevList.filter((list) => list.shoppingList.ID !== ID)
         );
+        setMenuVisible((prev) => {
+            const newMenuVisible = { ...prev };
+            delete newMenuVisible[ID];
+            return newMenuVisible;
+        });
     }
     function handelEdit(name: string, ID: number) {
         router.push({
@@ -203,8 +220,6 @@ export default function Tab() {
 
         setModalVisible(false);
         setNewListName("");
-
-        handelEdit(model.listName, model.ID);
     };
 
     return (
