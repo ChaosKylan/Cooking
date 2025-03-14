@@ -7,6 +7,8 @@ import {
     Keyboard,
     TouchableOpacity,
     FlatList,
+    Pressable,
+    Modal,
 } from "react-native";
 import { useState, useContext, useRef } from "react";
 import { useRouter } from "expo-router";
@@ -24,13 +26,22 @@ import { ThemeContext } from "../lib/provider/themeContext";
 import defaultTheme from "../theme/defaultTheme";
 import globalStyles from "../styles/globalstyles";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Entypo from "@expo/vector-icons/Entypo";
+import { Menu, Provider } from "react-native-paper";
+import MenuItem from "react-native-paper/lib/typescript/components/Menu/MenuItem";
 
 export default function Tab() {
     var [searchText, setSearchText] = useState("");
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalNewVisible, setModalNewVisible] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+    const [recipeName, setRecipeName] = useState("");
+    const [menuVisible, setMenuVisible] = useState<{ [key: number]: boolean }>(
+        {}
+    );
+    const [isUpdate, setIsUpdate] = useState(false);
 
     const recipeRefs = useRef<{ [key: number]: View }>({});
 
@@ -58,126 +69,244 @@ export default function Tab() {
         );
     };
 
-    const handleEdit = () => {
-        if (selectedRecipe != null) {
-            setModalVisible(false);
-            router.push({
-                pathname: `screens/recipe/addRecipe`,
-                params: { recipeID: selectedRecipe.ID },
-            });
-        }
-    };
+    // const handleEdit = () => {
+    //     if (selectedRecipe != null) {
+    //         setModalVisible(false);
+    //         router.push({
+    //             pathname: `screens/recipe/addRecipe`,
+    //             params: { recipeID: selectedRecipe.ID },
+    //         });
+    //     }
+    // };
 
-    const handleDelete = () => {
-        if (selectedRecipe != null) {
+    const handleDelete = (item: Recipe) => {
+        if (item != null) {
             setRecipeList(
-                recipeList.filter(
-                    (recipe: Recipe) => recipe.ID !== selectedRecipe.ID
-                )
+                recipeList.filter((recipe: Recipe) => recipe.ID !== item.ID)
             );
 
             var recipeModel = SQliter.Model(recipeSchema);
-            recipeModel.ID = selectedRecipe.ID;
+            recipeModel.ID = item.ID;
             recipeModel.delete();
             var recipeIngModel = SQliter.Model(recipIngSchema);
             recipeIngModel.delete(
-                `${recipeSchema.tableName.toLocaleLowerCase()}ID = ${
-                    selectedRecipe.ID
-                }`
+                `${recipeSchema.tableName.toLocaleLowerCase()}ID = ${item.ID}`
             );
         }
-        setModalVisible(false);
-    };
-
-    const handleNew = () => {
-        router.push({
-            pathname: `screens/recipe/addRecipe`,
-            //params: { recipeID: 1 },
+        setMenuVisible((prev) => {
+            const newMenuVisible = { ...prev };
+            delete newMenuVisible[item.ID];
+            return newMenuVisible;
         });
     };
 
-    const renderItem = ({ item, index }: { item: Recipe; index: number }) => (
-        <TouchableOpacity
-            key={index}
-            onPress={() => {
-                router.push({
-                    pathname: `screens/recipe/viewRecipe`,
-                    params: { recipeID: item.ID },
-                });
-            }}
-            onLongPress={() => handleLongPress(item, index)}
-            ref={(ref) => {
-                if (ref) {
-                    recipeRefs.current[index] = ref;
-                }
-            }}
-        >
-            <Card title={item.title}>
-                <View style={styles.cardInner}>
-                    <Text style={styles.cardSubTitle}>Zutaten:</Text>
-                    <Text style={styles.cardText}>
-                        {
-                            //mapDataToString(model.ID)
-                            recIngMapper(item.ID, recipeList)
-                                .trim()
-                                .slice(0, -1)
-                                .substring(0, 43)
-                        }
-                    </Text>
-                </View>
-                <View style={styles.cardInner}>
-                    <Text style={styles.cardSubTitle}>Anleitung: </Text>
-                    <Text style={styles.cardText}>
-                        {item.instructions.substring(0, 50)}
-                    </Text>
-                </View>
-            </Card>
-        </TouchableOpacity>
-    );
-    //screens/addRecipe
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <View style={styles.topBox}>
-                    {/* <Pressable onPress={() => router.push("../screens/addRecipe")}> */}
-                    <Header
-                        backArrow={false}
-                        addIcon={true}
-                        onAdd={handleNew}
-                    />
+    const handleEdit = () => {
+        if (selectedRecipe) {
+            selectedRecipe.title = recipeName;
+            var recipeModel = SQliter.Model(recipeSchema);
+            recipeModel.ID = selectedRecipe.ID;
+            recipeModel.title = recipeName;
+            recipeModel.instructions = selectedRecipe.instructions;
+            recipeModel.update();
+            setRecipeList(
+                recipeList.map((recipe: Recipe) =>
+                    recipe.ID === selectedRecipe.ID ? recipeModel : recipe
+                )
+            );
+            setModalNewVisible(false);
+            setMenuVisible((prev) => ({
+                ...prev,
+                [selectedRecipe?.ID ?? 0]: false,
+            }));
+            setIsUpdate(false);
+            setRecipeName("");
+        }
+    };
 
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Suchen"
-                        placeholderTextColor={theme.colors.text}
-                        onChangeText={(data) => {
-                            setSearchText(data);
-                        }}
-                    ></TextInput>
+    const handleNew = () => {
+        var recipeModel = SQliter.Model(recipeSchema);
+        recipeModel.title = recipeName;
+        recipeModel.instructions = "";
+        recipeModel = recipeModel.insert();
+        setRecipeList([...recipeList, recipeModel]);
+        setModalNewVisible(false);
+        setMenuVisible((prev) => ({
+            ...prev,
+            [selectedRecipe?.ID ?? 0]: false,
+        }));
+        setIsUpdate(false);
+        setRecipeName("");
+        router.push({
+            pathname: `screens/recipe/addRecipe`,
+            params: { recipeID: recipeModel.ID },
+        });
+    };
+
+    const renderItem = ({ item }: { item: Recipe }) => {
+        return (
+            <Pressable
+                onPress={() => {
+                    router.push({
+                        pathname: `screens/recipe/addRecipe`,
+                        params: { recipeID: item.ID },
+                    });
+                }}
+            >
+                <Card>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardText}>{item.title}</Text>
+                        <Menu
+                            visible={menuVisible[item.ID] || false}
+                            onDismiss={() =>
+                                setMenuVisible((prev) => ({
+                                    ...prev,
+                                    [item.ID]: false,
+                                }))
+                            }
+                            anchor={
+                                <Pressable
+                                    onPress={() =>
+                                        setMenuVisible((prev) => ({
+                                            ...prev,
+                                            [item.ID]: true,
+                                        }))
+                                    }
+                                >
+                                    <Entypo
+                                        name="dots-three-vertical"
+                                        size={18}
+                                        color={theme.colors.iconColor}
+                                    />
+                                </Pressable>
+                            }
+                            contentStyle={styles.menuContent}
+                        >
+                            <Menu.Item
+                                onPress={() => {
+                                    setIsUpdate(true);
+                                    setSelectedRecipe(item);
+                                    setRecipeName(item.title);
+                                    setModalNewVisible(true);
+                                }}
+                                title="Umbenennen"
+                                titleStyle={styles.menuItemText}
+                            />
+                            <Menu.Item
+                                onPress={() => handleDelete(item)}
+                                title="Löschen"
+                                titleStyle={styles.menuItemText}
+                            />
+                        </Menu>
+                    </View>
+                </Card>
+            </Pressable>
+        );
+    };
+
+    return (
+        <Provider>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <View style={styles.topBox}>
+                        <Header
+                            backArrow={false}
+                            addIcon={true}
+                            onAdd={() => setModalNewVisible(true)}
+                        />
+
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Suchen"
+                            placeholderTextColor={theme.colors.text}
+                            onChangeText={(data) => {
+                                setSearchText(data);
+                            }}
+                        ></TextInput>
+                    </View>
+                    <TouchableWithoutFeedback
+                        onPress={Keyboard.dismiss}
+                        accessible={false}
+                    >
+                        <FlatList
+                            data={recipeList.filter((model: Recipe) =>
+                                searchCheck(model)
+                            )}
+                            renderItem={renderItem}
+                            keyExtractor={(item: Recipe, index: number) =>
+                                index.toString()
+                            }
+                        />
+                    </TouchableWithoutFeedback>
                 </View>
-                <TouchableWithoutFeedback
-                    onPress={Keyboard.dismiss}
-                    accessible={false}
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalNewVisible}
+                    onRequestClose={() => {
+                        setModalNewVisible(false);
+                        setMenuVisible((prev) => ({
+                            ...prev,
+                            [selectedRecipe?.ID ?? 0]: false,
+                        }));
+                        setIsUpdate(false);
+                        setRecipeName("");
+                    }}
                 >
-                    <FlatList
-                        data={recipeList.filter((model: Recipe) =>
-                            searchCheck(model)
-                        )}
-                        renderItem={renderItem}
-                        keyExtractor={(item: Recipe, index: number) =>
-                            index.toString()
-                        }
-                    />
-                </TouchableWithoutFeedback>
-                <EditDeleteModal
-                    modalVisible={modalVisible}
-                    setModalVisible={setModalVisible}
-                    modalPosition={modalPosition}
-                    handleEdit={handleEdit}
-                    handleDelete={handleDelete}
-                />
-            </View>
-        </SafeAreaView>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalView}>
+                            <View style={styles.modalHeader}>
+                                <Pressable
+                                    onPress={() => {
+                                        setModalNewVisible(false);
+                                        setMenuVisible((prev) => ({
+                                            ...prev,
+                                            [selectedRecipe?.ID ?? 0]: false,
+                                        }));
+                                        setIsUpdate(false);
+                                        setRecipeName("");
+                                    }}
+                                    style={styles.closeButton}
+                                >
+                                    <Entypo
+                                        name="cross"
+                                        size={24}
+                                        color={theme.colors.iconColor}
+                                    />
+                                </Pressable>
+                            </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Name des Rezepts"
+                                placeholderTextColor={
+                                    theme.colors.placeholderText
+                                }
+                                value={recipeName}
+                                onChangeText={setRecipeName}
+                            />
+                            {isUpdate === false ? (
+                                <Pressable
+                                    style={styles.button}
+                                    onPress={handleNew}
+                                >
+                                    <Text style={styles.buttonText}>
+                                        Speichern
+                                    </Text>
+                                </Pressable>
+                            ) : (
+                                <Pressable
+                                    style={styles.button}
+                                    onPress={handleEdit}
+                                >
+                                    <Text style={styles.buttonText}>
+                                        Ändern
+                                    </Text>
+                                </Pressable>
+                            )}
+                        </View>
+                    </View>
+                </Modal>
+            </SafeAreaView>
+        </Provider>
     );
 }
 
@@ -195,9 +324,11 @@ const createStyles = (theme: typeof defaultTheme) =>
         },
         cardText: {
             flexGrow: 1,
-            paddingTop: 5,
+            paddingBottom: 7,
+            paddingHorizontal: 10,
             flexShrink: 1,
             color: theme.colors.text,
+            fontSize: 18,
         },
         cardTitle: {
             padding: 10,
@@ -258,5 +389,19 @@ const createStyles = (theme: typeof defaultTheme) =>
         iconButton: {
             flexDirection: "row",
             alignItems: "center",
+        },
+        modalTitle: {
+            fontSize: 18,
+            fontWeight: "bold",
+            color: theme.colors.text,
+            marginBottom: 15,
+        },
+        cardHeader: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            paddingBottom: 10,
         },
     });

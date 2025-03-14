@@ -15,6 +15,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import CustomPicker from "@/app/components/CustomPicker";
 import { shopListIngRelSchema } from "@/app/model/schema/shoppingList/shopListIngRel";
 import AddIngToList from "@/app/components/ingredient/AddIngToList";
+import getIngredientID from "@/app/helper/getIngredientID";
 
 export default function AddIngredientsToList() {
     const { theme } = useContext(ThemeContext);
@@ -26,17 +27,18 @@ export default function AddIngredientsToList() {
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     const saveIngredientToList = (ingredient: Ingredient) => {
-        var newIng = SQliter.Model(ingredientSchema);
-        if (ingredient.ID === -1) {
-            newIng.ingName = ingredient.ingName;
-            newIng = newIng.insert();
-        } else {
-            newIng.id = ingredient.ID;
-        }
+        // var newIng = SQliter.Model(ingredientSchema);
+        // if (ingredient.ID === -1) {
+        //     newIng.ingName = ingredient.ingName;
+        //     newIng = newIng.insert();
+        // } else {
+        //     newIng.id = ingredient.ID;
+        // }
+        var ingID = getIngredientID(ingredient);
 
         var ingRelModel = SQliter.Model(shopListIngRelSchema);
         ingRelModel.shoppinglistsID = params.listID;
-        ingRelModel.ingredientsID = newIng.id;
+        ingRelModel.ingredientsID = ingID;
         ingRelModel.amount = ingredient.quantity;
         ingRelModel.unit = ingredient.unit ?? "";
         ingRelModel.done = false;
