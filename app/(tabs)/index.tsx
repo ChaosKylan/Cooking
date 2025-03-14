@@ -95,6 +95,8 @@ export default function Tab() {
                             color={theme.colors.primary}
                             unfilledColor={theme.colors.borderColor}
                             style={styles.progessBar}
+                            height={18}
+                            width={null}
                         >
                             <Text style={styles.progressText}>
                                 {item.recipesDone} / {item.numberOfRecipe}
@@ -424,17 +426,6 @@ const createStyles = (theme: typeof defaultTheme) =>
         },
         checkBoxText: {
             marginLeft: 8,
-            color: theme.colors.text,
-        },
-        progessBar: {
-            alignItems: "center",
-            width: "90%",
-            borderRadius: 10,
-            borderColor: theme.colors.primary,
-        },
-        progressText: {
-            fontSize: 14,
-            marginBottom: 4,
             color: theme.colors.text,
         },
     });

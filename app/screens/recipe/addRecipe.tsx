@@ -66,8 +66,8 @@ export default function AddRecipe() {
         setLocalIngredients((prevIngredients) => [
             ...prevIngredients,
             {
-                id: localIngredients.length + 1 || 0,
-                value: _value,
+                ID: localIngredients.length + 1 || 0,
+                ingName: _value,
                 quantity: _quantity,
                 unit: _unit,
             },
@@ -76,7 +76,7 @@ export default function AddRecipe() {
     function removeIngredient(ingredientID: number) {
         setLocalIngredients((prevIngredients) =>
             prevIngredients.filter(
-                (ingredient) => ingredient.id !== ingredientID
+                (ingredient) => ingredient.ID !== ingredientID
             )
         );
     }
@@ -93,10 +93,10 @@ export default function AddRecipe() {
     ) {
         setLocalIngredients((prevIngredients) =>
             prevIngredients.map((ingredient) =>
-                ingredient.id === id
+                ingredient.ID === id
                     ? {
                           ...ingredient,
-                          value: _text,
+                          ingName: _text,
                           quantity: _quantity,
                           unit: _unit,
                       }
@@ -111,10 +111,10 @@ export default function AddRecipe() {
             if (
                 ingredientList.findIndex(
                     (ingredient: any) =>
-                        ingredient.ingName === localIngredients[i].value
+                        ingredient.ingName === localIngredients[i].ingName
                 ) === -1
             ) {
-                ingredientModel.ingName = localIngredients[i].value;
+                ingredientModel.ingName = localIngredients[i].ingName;
 
                 ingredientModel = ingredientModel.insert();
                 setIngredientList((ingredientList: any) => [
@@ -124,7 +124,7 @@ export default function AddRecipe() {
             } else {
                 ingredientModel = ingredientList.find(
                     (ingredient: any) =>
-                        ingredient.ingName === localIngredients[i].value
+                        ingredient.ingName === localIngredients[i].ingName
                 );
             }
 
@@ -203,17 +203,17 @@ export default function AddRecipe() {
                 <View style={styles.contentContainer}>
                     <Text>Zutaten</Text>
                     {localIngredients.map((ingredient) => (
-                        <View key={ingredient.id}>
+                        <View key={ingredient.ID}>
                             <View style={styles.horiContainer}>
                                 <View style={styles.VertContainer}>
                                     <View style={styles.horiContainer}>
                                         <TextInput
                                             style={styles.ingInput}
                                             placeholder="Zutat eingeben"
-                                            value={ingredient.value}
+                                            value={ingredient.ingName}
                                             onChangeText={(text) =>
                                                 updateIngredientValue(
-                                                    ingredient.id,
+                                                    ingredient.ID,
                                                     text,
                                                     ingredient.quantity,
                                                     ingredient.unit
@@ -229,8 +229,8 @@ export default function AddRecipe() {
                                             keyboardType="number-pad"
                                             onChangeText={(text) =>
                                                 updateIngredientValue(
-                                                    ingredient.id,
-                                                    ingredient.value,
+                                                    ingredient.ID,
+                                                    ingredient.ingName,
                                                     text,
                                                     ingredient.unit
                                                 )
@@ -246,8 +246,8 @@ export default function AddRecipe() {
                                                     itemIndex
                                                 ) =>
                                                     updateIngredientValue(
-                                                        ingredient.id,
-                                                        ingredient.value,
+                                                        ingredient.ID,
+                                                        ingredient.ingName,
                                                         ingredient.quantity,
                                                         itemValue
                                                     )
@@ -279,7 +279,7 @@ export default function AddRecipe() {
                                 </View>
                                 <Pressable
                                     onPress={() =>
-                                        removeIngredient(ingredient.id)
+                                        removeIngredient(ingredient.ID)
                                     }
                                 >
                                     <Entypo

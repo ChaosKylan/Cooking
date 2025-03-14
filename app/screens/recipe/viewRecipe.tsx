@@ -31,8 +31,9 @@ export default function ViewRecipe() {
             </View> */}
             <Text>{recipeName}</Text>
             {ingredients.map((ingredient) => (
-                <Text key={ingredient.id}>
-                    {ingredient.value} - {ingredient.quantity} {ingredient.unit}
+                <Text key={ingredient.ID}>
+                    {ingredient.ingName} - {ingredient.quantity}{" "}
+                    {ingredient.unit}
                 </Text>
             ))}
             <Text>{instructions}</Text>

@@ -1,14 +1,14 @@
 export interface Ingredient {
-    id: number;
-    value: string;
+    ID: number;
+    ingName: string;
     quantity: string;
     unit: string;
 }
 
-export interface IngredientNew {
-    ID: number;
-    ingName: string;
-}
+// export interface IngredientNew {
+//     ID: number;
+//     ingName: string;
+// }
 
 export interface Recipe {
     ID: number;
@@ -44,6 +44,10 @@ export interface ShopListIngRel {
     unit: string;
     done: boolean;
     ID: number;
+}
+export interface ShoppingListRelMapper {
+    shopListIngRel: ShopListIngRel;
+    ingredient: Ingredient;
 }
 export interface ShoppingLists {
     listName: string;

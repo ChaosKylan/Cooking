@@ -57,6 +57,13 @@ export default function Layout() {
                             headerShown: false,
                         }}
                     ></Stack.Screen>
+
+                    <Stack.Screen
+                        name="screens/shoppingList/ingredientsList"
+                        options={{
+                            headerShown: false,
+                        }}
+                    ></Stack.Screen>
                 </Stack>
             </GlobalStateProvider>
         </ThemeProvider>
@@ -68,9 +75,11 @@ function preInitDB() {
         // sql.executeSqlWihtout("Drop table if exists Recipes");
         // sql.executeSqlWihtout("Drop table if exists RecipIngRel");
         // sql.executeSqlWihtout("Drop table if exists Ingredients");
-        //  sql.executeSqlWihtout("Drop table if exists Ingredients");
+        // sql.executeSqlWihtout("Drop table if exists Ingredients");
         // sql.executeSqlWihtout("Drop table if exists MealPlans");
-        // sql.executeSqlWihtout("Drop table if exists MealRecipRelSchema");
+        // sql.executeSqlWihtout("Drop table if exists ShopListIngRel");
+        // sql.executeSqlWihtout("Drop table if exists ShoppingLists");
+
         sql.createTable(recipeSchema);
         sql.createTable(ingredientSchema);
         sql.createTable(recipIngSchema);

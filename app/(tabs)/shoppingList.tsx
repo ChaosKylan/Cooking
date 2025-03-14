@@ -22,10 +22,20 @@ import { ThemeContext } from "../lib/provider/themeContext";
 import defaultTheme from "../theme/defaultTheme";
 import globalStyles from "../styles/globalstyles";
 import { shoppingListSchema } from "../model/schema/shoppingList/shoppinglist";
-import { ShoppingLists } from "../model/templates";
+import { Ingredient, ShoppingLists, ShopListIngRel } from "../model/templates";
+import shoppingListIngMapper from "../helper/shoppingListIngMapper";
+import Body from "../components/body";
+
+interface ShoppingListRel {
+    shoppingList: ShoppingLists;
+    ingsDone: number;
+    ingsTotal: number;
+}
 
 export default function Tab() {
-    const [localList, setLocalList] = useState<Array<ShoppingLists>>([]);
+    //const [localList, setLocalList] = useState<Array<ShoppingLists>>([]);
+    const [localList, setLocalList] = useState<Array<ShoppingListRel>>([]);
+    const [relList, setRelList] = useState<Array<ShopListIngRel>>([]);
     const [isEndReached, setIsEndReached] = useState(Boolean);
     const [modalVisible, setModalVisible] = useState(false);
     const [newListName, setNewListName] = useState("");
@@ -39,37 +49,38 @@ export default function Tab() {
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
-        const planList = SQliter.connection().findAll(shoppingListSchema);
-        planList?.forEach((model) => {
-            // const list: RecipeWithOrder[] = mealReciMapper(model.ID);
+        const shoppingLists = SQliter.connection().findAll(shoppingListSchema);
+        // console.log("plans", shoppingLists);
+        shoppingLists?.forEach((model) => {
+            const mapList = shoppingListIngMapper(model.ID);
 
-            // var tempPlan: Plan = {
-            //     ID: model.ID,
-            //     name: model.planName,
-            //     numberOfRecipe: list.length,
-            //     recipesDone: list.filter((rel) => rel.done).length,
-            // };
-
-            // setPlan((planList: any) => [...planList, tempPlan]);
-            setLocalList((prevList) => [
-                ...prevList,
-                { listName: model.listName, ID: model.ID },
-            ]);
+            const tmpShoppingListRel: ShoppingListRel = {
+                shoppingList: {
+                    listName: model.listName,
+                    ID: model.ID,
+                },
+                ingsDone: mapList.filter((rel) => rel.shopListIngRel.done)
+                    .length,
+                ingsTotal: mapList.length,
+            };
+            setLocalList((prevList) => [...prevList, tmpShoppingListRel]);
         });
     }, []);
 
-    function handleRename(item: ShoppingLists): void {
+    function handleRename(item: ShoppingListRel): void {
         setModalVisible(true);
-        setNewListName(item.listName);
+        setNewListName(item.shoppingList.listName);
 
         var model = SQliter.Model(shoppingListSchema);
-        model.ID = item.ID;
+        model.ID = item.shoppingList.ID;
         model.listName = newListName;
         model.update();
 
         setLocalList((prevList) =>
             prevList.map((list) =>
-                list.ID === item.ID ? { ...list, listName: newListName } : list
+                list.shoppingList.ID === item.shoppingList.ID
+                    ? { ...list, listName: newListName }
+                    : list
             )
         );
     }
@@ -79,11 +90,13 @@ export default function Tab() {
         model.ID = ID;
         model.delete();
 
-        setLocalList((prevList) => prevList.filter((list) => list.ID !== ID));
+        setLocalList((prevList) =>
+            prevList.filter((list) => list.shoppingList.ID !== ID)
+        );
     }
     function handelEdit(name: string, ID: number) {
         router.push({
-            pathname: `screens/shoppingList/addIngredientsToList`,
+            pathname: `screens/shoppingList/ingredientsList`,
             params: {
                 listName: name,
                 listID: ID,
@@ -91,7 +104,7 @@ export default function Tab() {
         });
     }
 
-    const renderItem = ({ item }: { item: ShoppingLists | null }) => {
+    const renderItem = ({ item }: { item: ShoppingListRel | null }) => {
         if (item === null) {
             return (
                 <View>
@@ -103,32 +116,37 @@ export default function Tab() {
         return (
             <Pressable
                 onPress={() => {
-                    handelEdit(item.listName, item.ID);
+                    handelEdit(
+                        item.shoppingList.listName,
+                        item.shoppingList.ID
+                    );
                 }}
             >
-                <Card title={item.listName}>
+                <Card title={item.shoppingList.listName}>
                     <View style={styles.horiContainer}>
                         <Progress.Bar
-                            // progress={
-                            //     item.numberOfRecipe > 0
-                            //         ? item.recipesDone / item.numberOfRecipe
-                            //         : 0
-                            // }
+                            progress={
+                                item.ingsTotal > 0
+                                    ? item.ingsDone / item.ingsTotal
+                                    : 0
+                            }
                             color={theme.colors.primary}
                             unfilledColor={theme.colors.borderColor}
                             style={styles.progessBar}
+                            height={18}
+                            width={null}
                         >
-                            {/* <Text style={styles.progressText}>
-                                {item.recipesDone} / {item.numberOfRecipe}
-                            </Text> */}
+                            <Text style={styles.progressText}>
+                                {item.ingsDone}/{item.ingsTotal}
+                            </Text>
                         </Progress.Bar>
                         <View style={styles.spacer} />
                         <Menu
-                            visible={menuVisible[item.ID] || false}
+                            visible={menuVisible[item.shoppingList.ID] || false}
                             onDismiss={() =>
                                 setMenuVisible((prev) => ({
                                     ...prev,
-                                    [item.ID]: false,
+                                    [item.shoppingList.ID]: false,
                                 }))
                             }
                             anchor={
@@ -136,7 +154,7 @@ export default function Tab() {
                                     onPress={() =>
                                         setMenuVisible((prev) => ({
                                             ...prev,
-                                            [item.ID]: true,
+                                            [item.shoppingList.ID]: true,
                                         }))
                                     }
                                 >
@@ -155,7 +173,9 @@ export default function Tab() {
                                 titleStyle={styles.menuItemText}
                             />
                             <Menu.Item
-                                onPress={() => handleDelete(item.ID)}
+                                onPress={() =>
+                                    handleDelete(item.shoppingList.ID)
+                                }
                                 title="Löschen"
                                 titleStyle={styles.menuItemText}
                             />
@@ -167,81 +187,93 @@ export default function Tab() {
     };
     const handleCreateClick = () => {
         var model = SQliter.Model(shoppingListSchema);
-        model.listName = newListName;
+        model.listName = newListName || "Neue Liste";
         model = model.insert();
 
-        var newShoppingList: ShoppingLists = {
-            listName: newListName,
-            ID: model.ID,
+        var newShoppingList: ShoppingListRel = {
+            shoppingList: {
+                listName: model.listName,
+                ID: model.ID,
+            },
+            ingsDone: 0,
+            ingsTotal: 0,
         };
 
         setLocalList([...localList, newShoppingList]);
 
         setModalVisible(false);
         setNewListName("");
+
+        handelEdit(model.listName, model.ID);
     };
+
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <View style={styles.topBox}>
-                    <Header backArrow={false}></Header>
-                </View>
-                <FlatList
-                    data={[...localList, null]}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => index.toString()}
-                />
-                <Pressable
-                    style={[
-                        styles.addButton,
-                        isEndReached && styles.addButtonEnd,
-                    ]}
-                    onPress={() => setModalVisible(true)}
-                >
-                    <Text style={styles.addButtonText}>add</Text>
-                </Pressable>
-                <Modal
-                    animationType="none"
-                    transparent={true}
-                    visible={modalVisible}
-                    onRequestClose={() => {
-                        setModalVisible(false);
-                    }}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalView}>
-                            <View style={styles.modalHeader}>
+        <Provider>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.container}>
+                    <View style={styles.topBox}>
+                        <Header backArrow={false}></Header>
+                    </View>
+                    <FlatList
+                        data={[...localList, null]}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => index.toString()}
+                    />
+                    <Pressable
+                        style={[
+                            styles.addButton,
+                            isEndReached && styles.addButtonEnd,
+                        ]}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Text style={styles.addButtonText}>add</Text>
+                    </Pressable>
+
+                    <Modal
+                        animationType="none"
+                        transparent={true}
+                        visible={modalVisible}
+                        onRequestClose={() => {
+                            setModalVisible(false);
+                        }}
+                    >
+                        <View style={styles.modalOverlay}>
+                            <View style={styles.modalView}>
+                                <View style={styles.modalHeader}>
+                                    <Pressable
+                                        style={styles.closeButton}
+                                        onPress={() => setModalVisible(false)}
+                                    >
+                                        <Entypo
+                                            name="cross"
+                                            size={24}
+                                            color={theme.colors.iconColor}
+                                        />
+                                    </Pressable>
+                                </View>
+                                <TextInput
+                                    placeholder="Name der Liste"
+                                    placeholderTextColor={
+                                        theme.colors.placeholderText
+                                    }
+                                    style={styles.input}
+                                    value={newListName}
+                                    onChangeText={setNewListName}
+                                />
                                 <Pressable
-                                    style={styles.closeButton}
-                                    onPress={() => setModalVisible(false)}
+                                    style={styles.button}
+                                    onPress={handleCreateClick}
                                 >
-                                    <Entypo
-                                        name="cross"
-                                        size={24}
-                                        color={theme.colors.iconColor}
-                                    />
+                                    <Text style={styles.buttonText}>
+                                        Erstellen
+                                    </Text>
                                 </Pressable>
                             </View>
-                            <TextInput
-                                placeholder="Name der Liste"
-                                placeholderTextColor={
-                                    theme.colors.placeholderText
-                                }
-                                style={styles.input}
-                                value={newListName}
-                                onChangeText={setNewListName}
-                            />
-                            <Pressable
-                                style={styles.button}
-                                onPress={handleCreateClick}
-                            >
-                                <Text style={styles.buttonText}>Erstellen</Text>
-                            </Pressable>
                         </View>
-                    </View>
-                </Modal>
-            </View>
-        </SafeAreaView>
+                    </Modal>
+                </View>
+            </SafeAreaView>
+        </Provider>
     );
 }
 
@@ -269,16 +301,5 @@ const createStyles = (theme: typeof defaultTheme) =>
             color: "white",
             fontSize: 16,
             fontWeight: "bold",
-        },
-        progessBar: {
-            alignItems: "center",
-            width: "90%",
-            borderRadius: 10,
-            borderColor: theme.colors.primary,
-        },
-        progressText: {
-            fontSize: 14,
-            marginBottom: 4,
-            color: theme.colors.text,
         },
     });

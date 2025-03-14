@@ -29,6 +29,11 @@ export default function AppNavigator() {
                 name="screens/shoppingList/addIngredientsToList"
                 options={{ headerShown: false }}
             />
+
+            <Stack.Screen
+                name="screens/shoppingList/ingredientsList"
+                options={{ headerShown: false }}
+            />
         </Stack>
     );
 }

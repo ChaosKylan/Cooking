@@ -99,6 +99,18 @@ const globalStyles = (theme: typeof defaultTheme) =>
         menuItemText: {
             color: theme.colors.text,
         },
+        progessBar: {
+            width: "90%",
+            borderRadius: 10,
+            borderColor: theme.colors.primary,
+        },
+        progressText: {
+            position: "absolute",
+            alignSelf: "center",
+            color: theme.colors.text,
+            fontSize: 14,
+            fontWeight: "bold",
+        },
     });
 
 export default globalStyles;

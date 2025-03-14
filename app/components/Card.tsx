@@ -35,7 +35,10 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 35,
         borderTopRightRadius: 15,
         borderBottomLeftRadius: 15,
-        padding: 15,
+        paddingTop: 15,
+        paddingRight: 15,
+        paddingBottom: 7,
+        paddingLeft: 15,
         marginBottom: 15,
         shadowColor: "#4caf50",
         shadowOffset: {

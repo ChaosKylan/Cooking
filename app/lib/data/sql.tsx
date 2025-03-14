@@ -184,14 +184,18 @@ class SQliter {
             if (where != "") {
                 query += `WHERE ${where}`;
             }
-            // var test = this.executeSqlWithReturn("Select * from RecipIngRel");
-            //console.log(query);
+            // var test = this.executeSqlWithReturn(
+            //     "Select * from ShopListIngRel"
+            // );
+            // console.log("test", test);
+            // console.log("findAll", query);
             const row: any = this.db.getAllSync(query);
 
             for (var i = 0; i < row.length; i++) {
                 var model = this.generateModelFromSchema(schema, row[i]);
                 modelList.push(model);
             }
+            // console.log("findAllModel", modelList);
             return modelList;
         } catch (e) {
             console.log("findAll", e, schema.tableName);
@@ -391,9 +395,7 @@ class SQliter {
                     if (relationSchema) {
                         var relationResult = this.sqliter.findAll(
                             relationSchema,
-                            `${this.name.toLocaleLowerCase()}ID == ${
-                                this["ID"]
-                            }`
+                            `${this.name.toLocaleLowerCase()}ID = ${this["ID"]}`
                         );
 
                         var relationID = relationResult
