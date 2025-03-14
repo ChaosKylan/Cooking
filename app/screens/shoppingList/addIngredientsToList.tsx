@@ -20,6 +20,7 @@ export default function AddIngredientsToList() {
     const { theme } = useContext(ThemeContext);
 
     const params = useLocalSearchParams();
+    const router = useRouter();
 
     const [tile, setTile] = useState<string>((params.listName as string) ?? "");
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
@@ -32,19 +33,35 @@ export default function AddIngredientsToList() {
         } else {
             newIng.id = ingredient.ID;
         }
+
         var ingRelModel = SQliter.Model(shopListIngRelSchema);
         ingRelModel.shoppinglistsID = params.listID;
-        ingRelModel.ingredientsID = newIng.ID;
+        ingRelModel.ingredientsID = newIng.id;
         ingRelModel.amount = ingredient.quantity;
         ingRelModel.unit = ingredient.unit ?? "";
         ingRelModel.done = false;
         ingRelModel.insert();
     };
+
+    const goBack = () => {
+        router.replace({
+            pathname: `screens/shoppingList/ingredientsList`,
+            params: {
+                listName: params.listName,
+                listID: params.listID,
+            },
+        });
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <View style={styles.topBox}>
-                    <Header backArrow={true} headerText={tile}></Header>
+                    <Header
+                        backArrow={true}
+                        headerText={tile}
+                        onGoBack={goBack}
+                    ></Header>
                 </View>
                 <AddIngToList
                     saveIngredientToList={saveIngredientToList}

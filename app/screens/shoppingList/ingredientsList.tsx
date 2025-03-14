@@ -19,6 +19,7 @@ import Body from "@/app/components/body";
 import { shoppingListSchema } from "@/app/model/schema/shoppingList/shoppinglist";
 import shoppingListIngMapper from "@/app/helper/shoppingListIngMapper";
 import { Entypo } from "@expo/vector-icons";
+import IngredientModal from "@/app/components/ingredient/IngredientModal";
 
 export default function AddIngredientsToList() {
     const { theme } = useContext(ThemeContext);
@@ -33,6 +34,13 @@ export default function AddIngredientsToList() {
     const [localList, setLocalList] = useState<Array<ShoppingListRelMapper>>(
         []
     );
+    const [selectedIng, setSelectedIng] = useState<Ingredient>({
+        ID: -1,
+        ingName: "",
+        quantity: "",
+        unit: "",
+    });
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
@@ -45,7 +53,7 @@ export default function AddIngredientsToList() {
             pathname: `screens/shoppingList/addIngredientsToList`,
             params: {
                 listName: params.listName,
-                listID: params.ID,
+                listID: params.listID,
             },
         });
     };
@@ -74,6 +82,23 @@ export default function AddIngredientsToList() {
         updateModel.update();
 
         setLocalList(newLocalList);
+    };
+
+    const handleItemDel = (item: ShoppingListRelMapper) => {
+        var deleteModel = SQliter.Model(shopListIngRelSchema);
+        deleteModel.ID = item.shopListIngRel.ID;
+        deleteModel.delete();
+        setLocalList(localList.filter((listItem) => listItem !== item));
+    };
+
+    const handleEdit = (item: ShoppingListRelMapper) => {
+        var tempIng: Ingredient = {
+            ID: item.ingredient.ID,
+            ingName: item.ingredient.ingName,
+            quantity: item.shopListIngRel.quantity,
+            unit: item.shopListIngRel.unit,
+        };
+        setSelectedIng(tempIng);
     };
 
     const renderItem = ({ item }: { item: ShoppingListRelMapper | null }) => {
@@ -115,7 +140,10 @@ export default function AddIngredientsToList() {
                     </Text>
                     <View style={styles.iconContainer}>
                         <Pressable
-                        // onPress={() => handleItemDel(item)}
+                            onPress={() => {
+                                handleEdit(item);
+                                setModalVisible(true);
+                            }}
                         >
                             <Entypo
                                 name="edit"
@@ -124,9 +152,7 @@ export default function AddIngredientsToList() {
                                 style={styles.icon}
                             />
                         </Pressable>
-                        <Pressable
-                        // onPress={() => handleItemDel(item)}
-                        >
+                        <Pressable onPress={() => handleItemDel(item)}>
                             <Entypo
                                 name="cross"
                                 size={33}
@@ -139,27 +165,72 @@ export default function AddIngredientsToList() {
         );
     };
 
+    const updateIng = (ingredient: Ingredient) => {
+        const newLocalList = localList.map((listItem) => {
+            if (listItem.ingredient.ID === ingredient.ID) {
+                return {
+                    ...listItem,
+                    ingredient: ingredient,
+                };
+            }
+            return listItem;
+        });
+        setLocalList(newLocalList);
+        var selectItem = localList.find(
+            (item) => item.ingredient.ID === ingredient.ID
+        );
+        var updateModel = SQliter.connection().findOne(
+            shopListIngRelSchema,
+            `ID = ${selectItem?.shopListIngRel.ID}`
+        );
+        if (updateModel) {
+            updateModel.amount = ingredient.quantity;
+            updateModel.unit = ingredient.unit;
+            updateModel.update();
+        }
+        setModalVisible(false);
+    };
+
+    useEffect(() => {
+        if (!modalVisible) {
+            const mapList = shoppingListIngMapper(listID);
+            setLocalList(mapList);
+        }
+    }, [modalVisible]);
+
+    const sortedList = [...localList].sort((a, b) => {
+        if (a.shopListIngRel.done === b.shopListIngRel.done) {
+            return 0;
+        }
+        return a.shopListIngRel.done ? 1 : -1;
+    });
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
                 <View style={styles.topBox}>
-                    <Header backArrow={true} headerText={tile}></Header>
+                    <Header
+                        backArrow={true}
+                        headerText={tile}
+                        onGoBack={router.dismissAll}
+                    ></Header>
                 </View>
                 <FlatList
-                    data={[...localList, null]}
+                    data={[...sortedList, null]}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => index.toString()}
                 />
                 <Pressable style={[styles.addButton]} onPress={handleAddPress}>
                     <Text style={styles.addButtonText}>add</Text>
                 </Pressable>
-                <Body
-                    isEndReached={false}
-                    data={localList}
-                    renderItem={renderItem}
-                    handleAddPress={handleAddPress}
-                ></Body>
             </View>
+            <IngredientModal
+                visible={modalVisible}
+                ingredient={selectedIng}
+                save={updateIng}
+                buttonText="Ändern"
+                onclose={() => setModalVisible(false)}
+            ></IngredientModal>
         </SafeAreaView>
     );
 }

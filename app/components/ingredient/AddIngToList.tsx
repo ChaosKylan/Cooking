@@ -22,6 +22,7 @@ import { Ingredient } from "@/app/model/templates";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CustomPicker from "@/app/components/CustomPicker";
 import { shopListIngRelSchema } from "@/app/model/schema/shoppingList/shopListIngRel";
+import IngredientModal from "./IngredientModal";
 
 interface AddIngToListProps {
     saveIngredientToList: (selectedIngredient: Ingredient) => void;
@@ -51,11 +52,19 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
     useEffect(() => {
         const fetchedIngredients =
             SQliter.connection().findAll(ingredientSchema);
-        setIngredientList(fetchedIngredients);
+        fetchedIngredients?.forEach((element) => {
+            var tempIng: Ingredient = {
+                ID: element.ID,
+                ingName: element.ingName,
+                quantity: "",
+                unit: "",
+            };
+
+            setLocalIngredients((prev) => [...prev, tempIng]);
+        });
     }, []);
 
     const handleAddIngredient = (item: Ingredient) => {
-        console.log("Add Ingredient: ", item);
         setSelectedIngredient(item);
         setModalVisible(true);
     };
@@ -77,24 +86,35 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
         setCardVisible(true);
         if (text.trim() !== "") {
             const filteredIngredients: Ingredient[] = (ingredientList ?? [])
-                .filter((ingredient: any) =>
+                .filter((ingredient: Ingredient) =>
                     ingredient.ingName
                         ?.toLowerCase()
                         .startsWith(text.trim().toLowerCase())
                 )
-                .map((ingredient: any) => ({
-                    id: ingredient.ID,
-                    value: ingredient.ingName,
+                .map((ingredient: Ingredient) => ({
+                    ID: ingredient.ID,
+                    ingName: ingredient.ingName,
                     quantity: "",
                     unit: "",
                 }));
-            var tmpIng: Ingredient = {
-                ID: -1,
-                ingName: text.trim(),
-                quantity: "",
-                unit: "",
-            };
-            setLocalIngredients([tmpIng, ...filteredIngredients]);
+
+            const isTextInFilteredIngredients = filteredIngredients.some(
+                (ingredient) =>
+                    ingredient.ingName.toLowerCase() ===
+                    text.trim().toLowerCase()
+            );
+
+            if (!isTextInFilteredIngredients) {
+                var tmpIng: Ingredient = {
+                    ID: -1,
+                    ingName: text.trim(),
+                    quantity: "",
+                    unit: "",
+                };
+                setLocalIngredients([tmpIng, ...filteredIngredients]);
+            } else {
+                setLocalIngredients(filteredIngredients);
+            }
         } else {
             setLocalIngredients([]);
             setCardVisible(false);
@@ -122,82 +142,12 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
                 </TouchableWithoutFeedback>
             </View>
             {selectedIngredient && (
-                <Modal
-                    animationType="slide"
-                    transparent={true}
+                <IngredientModal
+                    ingredient={selectedIngredient}
+                    save={saveIngredientToList}
                     visible={modalVisible}
-                    onRequestClose={() => {
-                        setModalVisible(false);
-                    }}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalView}>
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>
-                                    {selectedIngredient.ingName}
-                                </Text>
-                                <Pressable
-                                    style={styles.closeButton}
-                                    onPress={() => setModalVisible(false)}
-                                >
-                                    <Ionicons
-                                        name="close"
-                                        size={24}
-                                        color={theme.colors.iconColor}
-                                    />
-                                </Pressable>
-                            </View>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Menge"
-                                placeholderTextColor={
-                                    theme.colors.placeholderText
-                                }
-                                value={quantity}
-                                onChangeText={(text) => {
-                                    setQuantity(text);
-                                    if (selectedIngredient) {
-                                        setSelectedIngredient({
-                                            ...selectedIngredient,
-                                            quantity: text,
-                                        });
-                                    }
-                                }}
-                                keyboardType="numeric"
-                            />
-                            <CustomPicker
-                                placeholder="Einheit"
-                                selectedValue={unit}
-                                onValueChange={(value) => {
-                                    setUnit(value);
-                                    if (selectedIngredient) {
-                                        setSelectedIngredient({
-                                            ...selectedIngredient,
-                                            unit: value,
-                                        });
-                                    }
-                                }}
-                                items={[
-                                    { label: "Gramm", value: "g" },
-                                    { label: "Kilogramm", value: "kg" },
-                                    { label: "Milliliter", value: "ml" },
-                                    { label: "Stück", value: "pcs" },
-                                ]}
-                            />
-                            <Pressable
-                                style={styles.button}
-                                onPress={() => {
-                                    saveIngredientToList(selectedIngredient);
-                                    setModalVisible(false);
-                                }}
-                            >
-                                <Text style={styles.buttonText}>
-                                    Hinzufügen
-                                </Text>
-                            </Pressable>
-                        </View>
-                    </View>
-                </Modal>
+                    buttonText="Hinzufügen"
+                ></IngredientModal>
             )}
         </View>
     );

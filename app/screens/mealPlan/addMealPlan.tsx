@@ -238,13 +238,6 @@ export default function AddMealPlan() {
         );
     };
 
-    const goBack = () => {
-        router.replace({
-            pathname: "/",
-            params: {},
-        });
-    };
-
     const sortedRecipeList = [...localRecipeList].sort((a, b) => {
         if (a.done === b.done) {
             return 0;
@@ -258,7 +251,7 @@ export default function AddMealPlan() {
                 <View style={styles.topBox}>
                     <Header
                         headerText={params.title.toString()}
-                        onGoBack={goBack}
+                        onGoBack={router.dismissAll}
                     ></Header>
                 </View>
                 <FlatList
