@@ -38,6 +38,12 @@ export default function Layout() {
                         }}
                     ></Stack.Screen>
                     <Stack.Screen
+                        name="screens/recipe/takePhoto"
+                        options={{
+                            headerShown: false,
+                        }}
+                    ></Stack.Screen>
+                    <Stack.Screen
                         name="screens/mealPlan/addMealPlan"
                         options={{
                             headerShown: false,

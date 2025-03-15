@@ -212,6 +212,12 @@ export default function Tab() {
                             backArrow={false}
                             addIcon={true}
                             onAdd={() => setModalNewVisible(true)}
+                            editIcon={true}
+                            onEdit={() =>
+                                router.push({
+                                    pathname: `screens/recipe/takePhoto`,
+                                })
+                            }
                         />
 
                         <TextInput
