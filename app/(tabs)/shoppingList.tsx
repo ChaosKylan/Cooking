@@ -26,6 +26,7 @@ import { Ingredient, ShoppingLists, ShopListIngRel } from "../model/templates";
 import shoppingListIngMapper from "../helper/shoppingListIngMapper";
 import Body from "../components/body";
 import { shopListIngRelSchema } from "../model/schema/shoppingList/shopListIngRel";
+import { GlobalStateContext } from "../lib/provider/GlobalState";
 
 interface ShoppingListRel {
     shoppingList: ShoppingLists;
@@ -46,6 +47,9 @@ export default function Tab() {
     const [menuVisible, setMenuVisible] = useState<{ [key: number]: boolean }>(
         {}
     );
+
+    const { isShoppingListUpdated, setisShoppingListUpdated } =
+        useContext(GlobalStateContext);
     const router = useRouter();
 
     const { theme, setTheme } = useContext(ThemeContext);
@@ -53,23 +57,28 @@ export default function Tab() {
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
-        const shoppingLists = SQliter.connection().findAll(shoppingListSchema);
-        // console.log("plans", shoppingLists);
-        shoppingLists?.forEach((model) => {
-            const mapList = shoppingListIngMapper(model.ID);
+        if (isShoppingListUpdated) {
+            setLocalList([]);
+            const shoppingLists =
+                SQliter.connection().findAll(shoppingListSchema);
+            // console.log("plans", shoppingLists);
+            shoppingLists?.forEach((model) => {
+                const mapList = shoppingListIngMapper(model.ID);
 
-            const tmpShoppingListRel: ShoppingListRel = {
-                shoppingList: {
-                    listName: model.listName,
-                    ID: model.ID,
-                },
-                ingsDone: mapList.filter((rel) => rel.shopListIngRel.done)
-                    .length,
-                ingsTotal: mapList.length,
-            };
-            setLocalList((prevList) => [...prevList, tmpShoppingListRel]);
-        });
-    }, []);
+                const tmpShoppingListRel: ShoppingListRel = {
+                    shoppingList: {
+                        listName: model.listName,
+                        ID: model.ID,
+                    },
+                    ingsDone: mapList.filter((rel) => rel.shopListIngRel.done)
+                        .length,
+                    ingsTotal: mapList.length,
+                };
+                setLocalList((prevList) => [...prevList, tmpShoppingListRel]);
+            });
+            setisShoppingListUpdated(false);
+        }
+    }, [isShoppingListUpdated]);
 
     function handleRename(item: ShoppingListRel): void {
         setModalVisible(true);

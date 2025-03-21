@@ -41,6 +41,8 @@ export default function AddIngredientsToList() {
         unit: "",
     });
     const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const { isShoppingListUpdated, setisShoppingListUpdated } =
+        useContext(GlobalStateContext);
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
@@ -212,7 +214,10 @@ export default function AddIngredientsToList() {
                     <Header
                         backArrow={true}
                         headerText={tile}
-                        onGoBack={router.dismissAll}
+                        onGoBack={() => {
+                            setisShoppingListUpdated(true);
+                            router.dismissAll();
+                        }}
                     ></Header>
                 </View>
                 <FlatList

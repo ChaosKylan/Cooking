@@ -35,6 +35,8 @@ export default function AddMealPlan() {
     const router = useRouter();
 
     const { theme, setTheme } = useContext(ThemeContext);
+    const { isMealPlanUpdated, setIsMealPlanUpdated } =
+        useContext(GlobalStateContext);
 
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
@@ -251,7 +253,10 @@ export default function AddMealPlan() {
                 <View style={styles.topBox}>
                     <Header
                         headerText={params.title.toString()}
-                        onGoBack={router.dismissAll}
+                        onGoBack={() => {
+                            setIsMealPlanUpdated(true);
+                            router.dismissAll();
+                        }}
                     ></Header>
                 </View>
                 <FlatList

@@ -9,7 +9,6 @@ import { ThemeContext } from "../../lib/provider/themeContext";
 import defaultTheme from "../../theme/defaultTheme";
 import globalStyles from "../../styles/globalstyles";
 import ingredientSchema from "@/app/model/schema/ingredient";
-import { GlobalStateContext } from "../../lib/provider/GlobalState";
 import { Ingredient } from "@/app/model/templates";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CustomPicker from "@/app/components/CustomPicker";

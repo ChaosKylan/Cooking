@@ -26,6 +26,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../lib/provider/themeContext";
 import defaultTheme from "../theme/defaultTheme";
 import globalStyles from "../styles/globalstyles";
+import { GlobalStateContext } from "../lib/provider/GlobalState";
 
 interface Plan {
     ID: number;
@@ -47,6 +48,8 @@ export default function Tab() {
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
     const [isEndReached, setIsEndReached] = useState(false);
+    const { isMealPlanUpdated, setIsMealPlanUpdated } =
+        useContext(GlobalStateContext);
 
     const router = useRouter();
 
@@ -55,20 +58,24 @@ export default function Tab() {
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     useEffect(() => {
-        const planList = SQliter.connection().findAll(mealPlansSchema);
-        planList?.forEach((model) => {
-            const list: RecipeWithOrder[] = mealReciMapper(model.ID);
+        if (isMealPlanUpdated) {
+            setPlan([]);
+            const planList = SQliter.connection().findAll(mealPlansSchema);
+            planList?.forEach((model) => {
+                const list: RecipeWithOrder[] = mealReciMapper(model.ID);
 
-            var tempPlan: Plan = {
-                ID: model.ID,
-                name: model.planName,
-                numberOfRecipe: list.length,
-                recipesDone: list.filter((rel) => rel.done).length,
-            };
+                var tempPlan: Plan = {
+                    ID: model.ID,
+                    name: model.planName,
+                    numberOfRecipe: list.length,
+                    recipesDone: list.filter((rel) => rel.done).length,
+                };
 
-            setPlan((planList: any) => [...planList, tempPlan]);
-        });
-    }, []);
+                setPlan((planList: any) => [...planList, tempPlan]);
+            });
+            setIsMealPlanUpdated(false);
+        }
+    }, [isMealPlanUpdated]);
 
     const renderItem = ({ item }: { item: Plan | null }) => {
         if (item === null) {
@@ -190,17 +197,18 @@ export default function Tab() {
         model.planName = newName;
         model.insert();
         setModalVisible(false);
-        router.push({
-            pathname: `screens/mealPlan/addMealPlan`,
-            params: {
-                title: newName,
-                recipeCount: recipeCount,
-                autoGen: isModalChecked.toString(),
-                planID: model.ID,
-            },
-        });
+        // router.push({
+        //     pathname: `screens/mealPlan/addMealPlan`,
+        //     params: {
+        //         title: newName,
+        //         recipeCount: recipeCount,
+        //         autoGen: isModalChecked.toString(),
+        //         planID: model.ID,
+        //     },
+        // });
 
         setNewPlanName("");
+        setIsMealPlanUpdated(true);
     };
 
     const handleRenameSubmit = () => {
