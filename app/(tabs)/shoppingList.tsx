@@ -35,6 +35,9 @@ interface ShoppingListRel {
 
 export default function Tab() {
     //const [localList, setLocalList] = useState<Array<ShoppingLists>>([]);
+    const [shoppingLists, setShoppingLists] = useState<Array<ShoppingLists>>(
+        []
+    );
     const [localList, setLocalList] = useState<Array<ShoppingListRel>>([]);
     const [relList, setRelList] = useState<Array<ShopListIngRel>>([]);
     const [isEndReached, setIsEndReached] = useState(Boolean);

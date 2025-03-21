@@ -37,4 +37,11 @@ yarn-error.*
 #test
 test.txt
 
+#idea
+.idea/
+
+#android
+android/
+
 # @end expo-cli
+.idea/workspace.xml

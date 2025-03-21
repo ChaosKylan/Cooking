@@ -8,6 +8,11 @@ const packageJson = require("../../../package.json");
 const projectName = packageJson.name;
 const dbName = `${projectName}.db`;
 
+interface exportData {
+    schemaName?: string;
+    data?: string;
+}
+
 class SQliter {
     /*
         Open Database Connection
@@ -64,6 +69,37 @@ class SQliter {
         //console.log(query);
         //this.executeSqlWihtout("DROP TABLE IF EXISTS " + name);
         this.executeSqlWihtout(query);
+    }
+    private findAllData(schema: Schema, where: string = "") {
+        try {
+            var query = `SELECT * FROM ${schema.tableName} `;
+            if (where != "") {
+                query += `WHERE ${where}`;
+            }
+            const row: any = this.db.getAllSync(query);
+
+            return row;
+        } catch (e) {
+            console.log("findAll", e, schema.tableName);
+        }
+    }
+
+    clearDatabase(schemaList: Array<Schema>) {
+        schemaList.forEach((schema) => {
+            this.executeSqlWihtout(`DELETE FROM ${schema.tableName}`);
+        });
+    }
+
+    exportDataToFile(schemaList: Array<Schema>) {
+        var result: exportData[] = [];
+        schemaList.forEach((schema) => {
+            var rows: exportData = {};
+            var dbResult = this.findAllData(schema);
+            rows.schemaName = schema.tableName;
+            rows.data = JSON.stringify(dbResult);
+            result.push(rows);
+        });
+        return result;
     }
 
     async upgradeTable(
@@ -314,7 +350,7 @@ class SQliter {
                 Object.keys(this.schema.columns).forEach((key) => {
                     //const schemaDetails = this.schema.columns[key];
                     queryPartOne += `${key} ,`;
-                    if (key == "ID") {
+                    if (key == "ID" && this[key] == "0") {
                         var models = this.sqliter.findAll(this.schema);
                         var row = models?.reduce(
                             (max, model) => (model.ID > max ? model.ID : max),
@@ -334,10 +370,10 @@ class SQliter {
 
                 queryPartOne = queryPartOne.slice(0, -1);
                 queryPartTwo = queryPartTwo.slice(0, -1);
-                // console.log(
-                //     "insert",
-                //     queryPartOne + queryPartTwo + queryPartThree
-                // );
+                console.log(
+                    "insert",
+                    queryPartOne + queryPartTwo + queryPartThree
+                );
                 this.sqliter.executeSqlWihtout(
                     queryPartOne + queryPartTwo + queryPartThree
                 );

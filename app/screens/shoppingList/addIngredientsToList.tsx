@@ -27,13 +27,6 @@ export default function AddIngredientsToList() {
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
 
     const saveIngredientToList = (ingredient: Ingredient) => {
-        // var newIng = SQliter.Model(ingredientSchema);
-        // if (ingredient.ID === -1) {
-        //     newIng.ingName = ingredient.ingName;
-        //     newIng = newIng.insert();
-        // } else {
-        //     newIng.id = ingredient.ID;
-        // }
         var ingID = getIngredientID(ingredient);
 
         var ingRelModel = SQliter.Model(shopListIngRelSchema);

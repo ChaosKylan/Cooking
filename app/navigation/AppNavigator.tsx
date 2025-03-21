@@ -16,10 +16,6 @@ export default function AppNavigator() {
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="screens/recipe/takePhoto"
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen
                 name="screens/mealPlan/addMealPlan"
                 options={{ headerShown: false }}
             />

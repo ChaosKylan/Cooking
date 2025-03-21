@@ -69,16 +69,6 @@ export default function Tab() {
         );
     };
 
-    // const handleEdit = () => {
-    //     if (selectedRecipe != null) {
-    //         setModalVisible(false);
-    //         router.push({
-    //             pathname: `screens/recipe/addRecipe`,
-    //             params: { recipeID: selectedRecipe.ID },
-    //         });
-    //     }
-    // };
-
     const handleDelete = (item: Recipe) => {
         if (item != null) {
             setRecipeList(

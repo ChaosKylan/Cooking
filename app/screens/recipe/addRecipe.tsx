@@ -94,7 +94,12 @@ export default function AddRecipe() {
         recipeModel.instructions = instructions;
         recipeModel.title = recipeName;
         recipeModel.update();
-        setRecipeList();
+        const updatedRecipeList = recipeList.map((r) =>
+            r.ID === recipeModel.ID
+                ? { ...r, instructions, title: recipeName }
+                : r
+        );
+        setRecipeList(updatedRecipeList);
     };
 
     const addIng = (ing: Ingredient) => {
