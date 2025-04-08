@@ -1,3 +1,5 @@
+import { ListType } from "../helper/enum/listType";
+
 export interface Ingredient {
     ID: number;
     ingName: string;
@@ -52,4 +54,9 @@ export interface ShoppingListRelMapper {
 export interface ShoppingLists {
     listName: string;
     ID: number;
+}
+
+export interface listData {
+    ID: number;
+    listType: ListType;
 }

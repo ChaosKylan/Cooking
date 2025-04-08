@@ -1,4 +1,13 @@
-import { View, StyleSheet, Text, Pressable, FlatList } from "react-native";
+import {
+    View,
+    StyleSheet,
+    Text,
+    Pressable,
+    FlatList,
+    LayoutAnimation,
+    UIManager,
+    Platform,
+} from "react-native";
 import { useContext, useEffect, useState } from "react";
 import SQliter from "../../lib/data/sql";
 import Header from "../../components/header";
@@ -20,6 +29,10 @@ import { shoppingListSchema } from "@/app/model/schema/shoppingList/shoppinglist
 import shoppingListIngMapper from "@/app/helper/shoppingListIngMapper";
 import { Entypo } from "@expo/vector-icons";
 import IngredientModal from "@/app/components/ingredient/IngredientModal";
+import Animated, {
+    LinearTransition,
+    FadingTransition,
+} from "react-native-reanimated";
 
 export default function AddIngredientsToList() {
     const { theme } = useContext(ThemeContext);
@@ -34,6 +47,7 @@ export default function AddIngredientsToList() {
     const [localList, setLocalList] = useState<Array<ShoppingListRelMapper>>(
         []
     );
+    const [doneList, setDoneList] = useState<Array<ShoppingListRelMapper>>([]);
     const [selectedIng, setSelectedIng] = useState<Ingredient>({
         ID: -1,
         ingName: "",
@@ -111,6 +125,7 @@ export default function AddIngredientsToList() {
                 </View>
             );
         }
+
         return (
             <Card
                 cardStyle={StyleSheet.flatten([

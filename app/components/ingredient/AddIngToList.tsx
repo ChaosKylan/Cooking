@@ -18,18 +18,23 @@ import defaultTheme from "../../theme/defaultTheme";
 import globalStyles from "../../styles/globalstyles";
 import ingredientSchema from "@/app/model/schema/ingredient";
 import { GlobalStateContext } from "../../lib/provider/GlobalState";
-import { Ingredient } from "@/app/model/templates";
+import { Ingredient, listData } from "@/app/model/templates";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CustomPicker from "@/app/components/CustomPicker";
 import { shopListIngRelSchema } from "@/app/model/schema/shoppingList/shopListIngRel";
 import IngredientModal from "./IngredientModal";
+import recipIngSchema from "@/app/model/schema/recipeIngredientRel";
+import CustomTextInput from "../CustomTextInput";
+import { ListType } from "@/app/helper/enum/listType";
 
 interface AddIngToListProps {
+    listData?: listData;
     saveIngredientToList: (selectedIngredient: Ingredient) => void;
 }
 
 const AddIngToList: React.FC<AddIngToListProps> = ({
     saveIngredientToList,
+    listData,
 }) => {
     const [searchText, setSearchText] = useState("");
     const [localIngredients, setLocalIngredients] = useState<Ingredient[]>([]);
@@ -43,6 +48,7 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
     const [modalVisible, setModalVisible] = useState(false);
     const [quantity, setQuantity] = useState("");
     const [unit, setUnit] = useState("");
+    const [idAlreadyExists, setIdAlreadyExists] = useState<Array<Number>>([]);
 
     const params = useLocalSearchParams();
 
@@ -62,6 +68,33 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
 
             setLocalIngredients((prev) => [...prev, tempIng]);
         });
+        if (listData) {
+            var result: any = [];
+            switch (listData.listType) {
+                case ListType.ShoppingList:
+                    result =
+                        SQliter.connection().findAll(
+                            shopListIngRelSchema,
+                            `shoppinglistsID = ${params.listID}`
+                        ) ?? [];
+                    break;
+                case ListType.RecipeList:
+                    result =
+                        SQliter.connection().findAll(
+                            recipIngSchema,
+                            `shoppinglistsID = ${params.listID}`
+                        ) ?? [];
+                    break;
+            }
+            if (result.length > 0) {
+                var tempId: Array<Number> = [];
+                result.forEach((element: any) => {
+                    tempId.push(element.ingredientsID);
+                });
+                console.log(tempId);
+                setIdAlreadyExists(tempId);
+            }
+        }
     }, []);
 
     const handleAddIngredient = (item: Ingredient) => {
@@ -73,12 +106,22 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
         <View style={styles.cardItems}>
             <Text style={styles.cardText}>{item.ingName}</Text>
 
-            <Pressable
-                style={styles.addButton}
-                onPress={() => handleAddIngredient(item)}
-            >
-                <Ionicons name="add" size={24} color={theme.colors.primary} />
-            </Pressable>
+            {idAlreadyExists.includes(item.ID) ? (
+                <Pressable style={styles.addButton}>
+                    <Ionicons name="checkmark-circle" size={24} color="green" />
+                </Pressable>
+            ) : (
+                <Pressable
+                    style={styles.addButton}
+                    onPress={() => handleAddIngredient(item)}
+                >
+                    <Ionicons
+                        name="add"
+                        size={24}
+                        color={theme.colors.primary}
+                    />
+                </Pressable>
+            )}
         </View>
     );
     const handleOnTextChange = (text: string) => {
@@ -120,31 +163,39 @@ const AddIngToList: React.FC<AddIngToListProps> = ({
             setCardVisible(false);
         }
     };
-
+    const clearSearchText = () => {
+        setSearchText("");
+        setLocalIngredients([]);
+        setCardVisible(false);
+    };
+    const addIdToIdAlreadyExists = (id: number) => {
+        setIdAlreadyExists((prev) => [...prev, id]);
+    };
     return (
         <View>
-            <View>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Zutat hinzufügen"
-                    placeholderTextColor={theme.colors.placeholderText}
-                    value={searchText}
-                    onChangeText={handleOnTextChange}
-                />
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <Card visible={cardVisible}>
-                        <FlatList
-                            data={localIngredients}
-                            renderItem={renderItem}
-                            keyExtractor={(item, index) => index.toString()}
-                        />
-                    </Card>
-                </TouchableWithoutFeedback>
-            </View>
+            <CustomTextInput
+                value={searchText}
+                onChangeText={handleOnTextChange}
+                onClear={clearSearchText}
+                placeholder="Zutat hinzufügen"
+                placeholderTextColor={theme.colors.placeholderText}
+            />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <Card visible={cardVisible}>
+                    <FlatList
+                        data={localIngredients}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => index.toString()}
+                    />
+                </Card>
+            </TouchableWithoutFeedback>
             {selectedIngredient && (
                 <IngredientModal
                     ingredient={selectedIngredient}
-                    save={saveIngredientToList}
+                    save={() => {
+                        saveIngredientToList(selectedIngredient);
+                        addIdToIdAlreadyExists(selectedIngredient.ID);
+                    }}
                     visible={modalVisible}
                     buttonText="Hinzufügen"
                 ></IngredientModal>

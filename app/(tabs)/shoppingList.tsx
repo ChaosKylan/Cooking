@@ -126,6 +126,7 @@ export default function Tab() {
     function handelEdit(name: string, ID: number) {
         router.push({
             pathname: `screens/shoppingList/ingredientsList`,
+            //pathname: `screens/shoppingList/test`,
             params: {
                 listName: name,
                 listID: ID,

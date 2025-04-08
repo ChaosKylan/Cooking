@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, Modal } from "react-native";
 import { ThemeContext } from "../lib/provider/themeContext";
 import defaultTheme from "../theme/defaultTheme";
 import globalStyles from "../styles/globalstyles";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import * as FileSystem from "expo-file-system";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Card from "../components/Card";
@@ -15,11 +15,38 @@ import isValidFormat from "../helper/validedBackUpFileFormat";
 import { GlobalStateContext } from "../lib/provider/GlobalState";
 import ingredientSchema from "../model/schema/ingredient";
 import getSchemaList from "../model/schemaList";
+import * as Google from "expo-auth-session/providers/google";
+import { makeRedirectUri } from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { auth } from "@/firebaseConfig";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Tab() {
     const [modalVisible, setModalVisible] = useState(false);
     const { recipeList, setRecipeList } = useContext(GlobalStateContext);
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        androidClientId:
+            "281677756401-cmnuu0s1dcu9c12ql7q448n7a99vg7e9.apps.googleusercontent.com",
+        webClientId:
+            "935657623414-inlfgpjidbjgibpjaifqndml7pc7nv4u.apps.googleusercontent.com",
+        redirectUri: makeRedirectUri(),
+    });
 
+    useEffect(() => {
+        if (response?.type === "success") {
+            const { id_token } = response.params;
+            const credential = GoogleAuthProvider.credential(id_token);
+            signInWithCredential(auth, credential)
+                .then((userCredential) => {
+                    console.log("User signed in:", userCredential.user);
+                })
+                .catch((error) => {
+                    console.error("Error signing in:", error);
+                });
+        }
+    }, [response]);
     const { theme, setTheme } = useContext(ThemeContext);
     const schemaList: Array<Schema> = getSchemaList();
 
@@ -110,6 +137,22 @@ export default function Tab() {
             console.error("Error reading data:", err);
         }
     };
+    // const handleLogin = async () => {
+    //     try {
+    //         const provider = new GoogleAuthProvider();
+    //         const result = await signInWithPopup(auth, provider);
+
+    //         // Zugriff auf Benutzerinformationen
+    //         const user = result.user;
+    //         console.log("User logged in:", user.displayName, user.email);
+    //     } catch (error) {
+    //         if (error instanceof Error) {
+    //             console.error("Error during login:", error.message);
+    //         } else {
+    //             console.error("Error during login:", error);
+    //         }
+    //     }
+    // };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -123,6 +166,16 @@ export default function Tab() {
                     </Pressable>
                     <Pressable onPress={handleImport} style={styles.button}>
                         <Text style={styles.buttonText}>Import Data</Text>
+                    </Pressable>
+                </Card>
+                <Card>
+                    <Pressable
+                        // onPress={handleLogin
+                        onPress={() => promptAsync()}
+                        disabled={!request}
+                        style={styles.button}
+                    >
+                        <Text style={styles.buttonText}>Login</Text>
                     </Pressable>
                 </Card>
             </View>

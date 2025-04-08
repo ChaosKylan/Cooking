@@ -9,12 +9,13 @@ import { ThemeContext } from "../../lib/provider/themeContext";
 import defaultTheme from "../../theme/defaultTheme";
 import globalStyles from "../../styles/globalstyles";
 import ingredientSchema from "@/app/model/schema/ingredient";
-import { Ingredient } from "@/app/model/templates";
+import { Ingredient, listData } from "@/app/model/templates";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import CustomPicker from "@/app/components/CustomPicker";
 import { shopListIngRelSchema } from "@/app/model/schema/shoppingList/shopListIngRel";
 import AddIngToList from "@/app/components/ingredient/AddIngToList";
 import getIngredientID from "@/app/helper/getIngredientID";
+import { ListType } from "@/app/helper/enum/listType";
 
 export default function AddIngredientsToList() {
     const { theme } = useContext(ThemeContext);
@@ -24,6 +25,11 @@ export default function AddIngredientsToList() {
 
     const [tile, setTile] = useState<string>((params.listName as string) ?? "");
     var styles = { ...createStyles(theme), ...globalStyles(theme) };
+
+    const listData: listData = {
+        ID: Number(params.listID),
+        listType: ListType.ShoppingList,
+    };
 
     const saveIngredientToList = (ingredient: Ingredient) => {
         var ingID = getIngredientID(ingredient);
@@ -59,6 +65,7 @@ export default function AddIngredientsToList() {
                 </View>
                 <AddIngToList
                     saveIngredientToList={saveIngredientToList}
+                    listData={listData}
                 ></AddIngToList>
             </View>
         </SafeAreaView>
